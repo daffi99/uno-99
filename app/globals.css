@@ -1,9 +1,49 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Montserrat', sans-serif;
+  background: #f7f6ed;
+  margin: 0;
+  min-height: 100vh;
+  color: #222;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Add base styles for buttons, cards, and headings for a clean, modern look */
+.btn {
+  font-family: inherit;
+  border-radius: 8px;
+  font-weight: 600;
+  padding: 0.5rem 1.25rem;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn:hover {
+  background: #fff;
+}
+
+.card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  margin: 0;
 }
 
 @layer utilities {
@@ -91,4 +131,10 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Remove blue highlight/outline on drag-over and focus for all elements */
+*:focus {
+  outline: none !important;
+  box-shadow: none !important;
 }
