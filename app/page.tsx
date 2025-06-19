@@ -89,14 +89,14 @@ export default function UnoCalendar() {
 
   const weekContainerRef = useRef<HTMLDivElement>(null)
 
-  const [newTask, setNewTask] = useState({
+  const [newTask, setNewTask] = useState<Omit<Task, 'id' | 'created_at' | 'updated_at'>>({
     title: "",
     description: "",
     start_date: "",
     end_date: "",
     status: "Not started",
-    priority: "medium" as const,
-    recurring: "no" as "no" | "daily" | "weekly" | "monthly",
+    priority: "medium",
+    recurring: "no",
   })
 
   const [openPopovers, setOpenPopovers] = useState<Record<string, boolean>>({})
@@ -555,7 +555,7 @@ export default function UnoCalendar() {
       end_date: "",
       status: "Not started",
       priority: "medium",
-      recurring: "no" as "no" | "daily" | "weekly" | "monthly",
+      recurring: "no",
     })
     setIsCreateModalOpen(false)
     setClickedDate("")
@@ -598,13 +598,13 @@ export default function UnoCalendar() {
       startCol: startIndex,
       span: span,
       left: `calc(${(startIndex * 100) / 7}% + 4px)`,
-      width: `calc(${(span * 100) / 7}% - 8px)`,
+      width: `calc(${(span * 100) / 7}% - 10px)`,
     }
   }
 
-  // Smart stacking algorithm
+  // Smart stacking algorithm`
   const calculateTaskPositions = (weekDays: Date[], weekTasks: Task[]) => {
-    const TASK_HEIGHT = 110
+    const TASK_HEIGHT = 70
     const START_TOP = 8
 
     const columnOccupancy: number[][] = Array(7)
@@ -726,32 +726,103 @@ export default function UnoCalendar() {
 
     return (
       <div className="rounded-xl overflow-hidden">
-        <div className="bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 text-center">{weekLabel}</div>
+        <div className="px-4 py-4 text-sm font-bold text-center" style={{ background: 'transparent', color: '#222' }}>{weekLabel}</div>
         <div className="relative" ref={isCurrentWeek ? weekContainerRef : null}>
-          <div className="grid grid-cols-7 border-b border-gray-200">
-            {weekDays.map((day, index) => (
-              <div key={index} className="p-3 text-center border-r border-gray-100 last:border-r-0">
-                <div className="text-xs font-medium text-gray-500 mb-1">{formatDayName(day)}</div>
-                <div
-                  className={`text-lg font-bold ${
-                    formatDate(day) === formatDate(new Date()) ? "text-blue-600" : "text-gray-900"
-                  }`}
-                >
-                  {formatDisplayDate(day)}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="relative" style={{ minHeight: `${maxTop + 20}px` }}>
-            <div className="grid grid-cols-7 h-full absolute inset-0">
+          <div className="relative">
+            <div className="grid grid-cols-7 relative z-10">
               {weekDays.map((day, index) => (
                 <div
                   key={index}
-                  className="border-r border-gray-100 last:border-r-0 cursor-pointer hover:bg-gray-50 transition-colors p-2"
+                  className={`
+                    p-3 text-center
+                    ${index === 0 ? 'border-l border-gray-200' : ''}
+                    ${index === 6 ? 'border-r border-gray-200' : ''}
+                    border-t-0 border-b-0 border-y-0
+                    h-full
+                  `}
+                  style={{
+                    borderLeft: index === 0 ? '1px solid #e5e7eb' : undefined,
+                    borderRight: index === 6 ? '1px solid #e5e7eb' : undefined,
+                    borderTop: 'none',
+                    borderBottom: 'none',
+                  }}
+                >
+                  <div className="text-xs font-medium mb-1" style={{ color: '#888' }}>{formatDayName(day)}</div>
+                  <div
+                    className="text-lg font-bold"
+                    style={{ color: formatDate(day) === formatDate(new Date()) ? '#2563eb' : '#222' }}
+                  >
+                    {formatDisplayDate(day)}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {weekDays.slice(1).map((_, index) => (
+              <div
+                key={index}
+                className="absolute top-0 bottom-0"
+                style={{
+                  left: `${((index + 1) * 100) / 7}%`,
+                  width: '1px',
+                  background: '#e5e7eb',
+                  zIndex: 5,
+                  height: '100%',
+                }}
+              />
+            ))}
+          </div>
+          <div className="relative" style={{ minHeight: `${maxTop + 20}px` }}>
+            {/* Divider at the very start (before Monday) */}
+            <div
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: '1px',
+                backgroundColor: '#e5e7eb',
+                zIndex: 5,
+                pointerEvents: 'none',
+              }}
+            />
+            {/* Dividers between days */}
+            {Array.from({ length: 7 }).map((_, index) => (
+              <div
+                key={index}
+                style={{
+                  position: 'absolute',
+                  left: `${((index + 1) * 100) / 7}%`,
+                  top: 0,
+                  bottom: 0,
+                  width: '1px',
+                  backgroundColor: '#e5e7eb',
+                  zIndex: 5,
+                  pointerEvents: 'none',
+                }}
+              />
+            ))}
+            {/* Divider at the very end (after Sunday) */}
+            <div
+              style={{
+                position: 'absolute',
+                left: 'calc(100% - 1px)',
+                top: 0,
+                bottom: 0,
+                width: '1px',
+                backgroundColor: '#e5e7eb',
+                zIndex: 5,
+                pointerEvents: 'none',
+              }}
+            />
+            <div className="grid grid-cols-7 h-full absolute inset-0 z-10">
+              {weekDays.map((day, index) => (
+                <div
+                  key={index}
+                  className="cursor-pointer p-2 day-drop-target"
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, formatDate(day))}
                   onClick={() => isCurrentWeek && handleDateClick(formatDate(day))}
+                  style={{ background: 'transparent' }}
                 >
                   {getTasksForDate(formatDate(day)).length === 0 && isCurrentWeek && (
                     <div className="text-center text-gray-400 text-xs py-8">Click to add task</div>
@@ -759,41 +830,49 @@ export default function UnoCalendar() {
                 </div>
               ))}
             </div>
-
             <div className="absolute inset-0 pointer-events-none">
-              {weekTasks.map((task) => {
-                const taskPos = taskPositions.find((pos) => pos.taskId === task.id)
-                const position = getTaskPosition(task, weekDays)
-                const isUpdating = updatingTasks.has(task.id)
-
-                if (!taskPos || !position) return null
-
-                return (
-                  <div
-                    key={task.id}
-                    className={`absolute bg-white rounded-lg p-3 pb-6 shadow-md hover:shadow-lg transition-shadow group border border-gray-200 cursor-move pointer-events-auto ${
-                      isUpdating ? "opacity-75" : ""
-                    }`}
-                    style={{
-                      left: position.left,
-                      width: position.width,
-                      top: `${taskPos.top}px`,
-                      height: `${taskPos.height}px`,
-                    }}
-                    draggable
-                    onDragStart={() => handleDragStart(task)}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="flex flex-col h-full">
-                      <div className="flex items-start justify-between mb-1">
-                        <div className="flex-1 min-w-0 pr-2">
-                          <div
-                            className="text-gray-900 font-medium text-sm leading-tight"
+              <div className="flex-1 flex flex-col gap-0">
+                {weekTasks.map((task) => {
+                  const taskPos = taskPositions.find((pos) => pos.taskId === task.id)
+                  const position = getTaskPosition(task, weekDays)
+                  const isUpdating = updatingTasks.has(task.id)
+                  if (!taskPos || !position) return null
+                  return (
+                    <div
+                      key={task.id}
+                      className={`absolute bg-white rounded-lg p-2 pb-2 shadow-md hover:shadow-lg transition-shadow group cursor-move pointer-events-auto ${isUpdating ? 'opacity-75' : ''}`}
+                      style={{
+                        left: position.left,
+                        width: position.width,
+                        top: `${taskPos.top}px`,
+                        height: `${taskPos.height * 0.60}px`,
+                        border: 'none',
+                        zIndex: 10,
+                      }}
+                      draggable
+                      onDragStart={() => handleDragStart(task)}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="flex flex-col h-full">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span
+                            className={`inline-block rounded-full align-middle ${statusOptions[task.status as keyof typeof statusOptions]?.color || 'bg-gray-400'}`}
                             style={{
-                              display: "-webkit-box",
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: "vertical",
-                              overflow: "hidden",
+                              width: '0.5rem',
+                              height: '0.5rem',
+                              minWidth: '0.5rem',
+                              minHeight: '0.5rem',
+                              verticalAlign: 'middle',
+                              display: 'inline-block',
+                            }}
+                          ></span>
+                          <div
+                            className="text-gray-900 font-bold text-xs leading-tight truncate"
+                            style={{
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              maxWidth: '100%',
                             }}
                           >
                             {task.title}
@@ -806,71 +885,66 @@ export default function UnoCalendar() {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-1">
-                          {isUpdating && <Loader2 className="w-3 h-3 animate-spin text-blue-500" />}
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-between group/card">
+                          <Popover
+                            open={openPopovers[task.id] || false}
+                            onOpenChange={(open) => setOpenPopovers((prev) => ({ ...prev, [task.id]: open }))}
+                          >
+                            <PopoverTrigger asChild>
+                              <span
+                                className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold ${statusOptions[task.status as keyof typeof statusOptions]?.color || 'bg-gray-400'} text-white`}
+                                style={{ fontFamily: 'Montserrat, sans-serif', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 90 }}
+                              >
+                                {task.status}
+                              </span>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-64 p-2" align="start">
+                              <div className="space-y-1">
+                                {Object.entries(groupedStatuses).map(([category, statuses]) => (
+                                  <div key={category}>
+                                    <div className="px-2 py-1 text-xs font-semibold text-gray-500">{category}</div>
+                                    {statuses.map((status) => (
+                                      <button
+                                        key={status}
+                                        className="w-full text-left px-2 py-1 text-sm hover:bg-gray-100 rounded flex items-center gap-2 cursor-pointer"
+                                        onClick={() => handleQuickStatusChange(task.id, status)}
+                                      >
+                                        <div
+                                          className={`w-3 h-3 rounded-full ${statusOptions[status as keyof typeof statusOptions]?.color}`}
+                                        />
+                                        {status}
+                                      </button>
+                                    ))}
+                                  </div>
+                                ))}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                          <div className="flex items-center gap-2 opacity-0 group-hover/card:opacity-100 transition-opacity">
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-6 w-6 p-0 text-gray-600 hover:bg-gray-100"
+                              className="h-6 w-6 p-0 text-gray-600 hover:bg-gray-100 focus:bg-gray-100 active:bg-gray-100 focus:ring-0 focus:outline-none"
                               onClick={(e) => {
-                                e.stopPropagation()
-                                handleEditTask(task)
+                                e.stopPropagation();
+                                handleEditTask(task);
                               }}
                             >
                               <Edit2 className="w-3 h-3" />
                             </Button>
-                          </div>
-
-                          <div
-                            className="w-4 h-6 cursor-ew-resize opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                            onMouseDown={(e) => handleResizeStart(e, task)}
-                          >
-                            <GripVertical className="w-3 h-3 text-gray-400" />
+                            <div
+                              className="w-4 h-6 cursor-ew-resize flex items-center justify-center"
+                              onMouseDown={(e) => handleResizeStart(e, task)}
+                            >
+                              <GripVertical className="w-3 h-3 text-gray-400" />
+                            </div>
                           </div>
                         </div>
                       </div>
-
-                      <div className="mt-auto pt-1 pb-3 mb-3">
-                        <Popover
-                          open={openPopovers[task.id] || false}
-                          onOpenChange={(open) => setOpenPopovers((prev) => ({ ...prev, [task.id]: open }))}
-                        >
-                          <PopoverTrigger asChild>
-                            <Badge
-                              className={`${statusOptions[task.status as keyof typeof statusOptions]?.color || "bg-gray-500"} text-white text-xs border-0 cursor-pointer hover:opacity-80 transition-opacity w-full justify-start relative`}
-                            >
-                              {task.status}
-                              {isUpdating && <Loader2 className="w-3 h-3 animate-spin ml-auto" />}
-                            </Badge>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-64 p-2" align="start">
-                            <div className="space-y-1">
-                              {Object.entries(groupedStatuses).map(([category, statuses]) => (
-                                <div key={category}>
-                                  <div className="px-2 py-1 text-xs font-semibold text-gray-500">{category}</div>
-                                  {statuses.map((status) => (
-                                    <button
-                                      key={status}
-                                      className="w-full text-left px-2 py-1 text-sm hover:bg-gray-100 rounded flex items-center gap-2 cursor-pointer"
-                                      onClick={() => handleQuickStatusChange(task.id, status)}
-                                    >
-                                      <div
-                                        className={`w-3 h-3 rounded-full ${statusOptions[status as keyof typeof statusOptions]?.color}`}
-                                      />
-                                      {status}
-                                    </button>
-                                  ))}
-                                </div>
-                              ))}
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                      </div>
                     </div>
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
             </div>
           </div>
         </div>
@@ -880,7 +954,7 @@ export default function UnoCalendar() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="flex items-center gap-2">
           <Loader2 className="w-6 h-6 animate-spin" />
           <span>Loading tasks...</span>
@@ -890,55 +964,30 @@ export default function UnoCalendar() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Uno</h1>
-            <p className="text-gray-600 mt-1">Manage your tasks and schedule</p>
+    <div className="min-h-screen" style={{ background: '#f7f6ed' }}>
+      <div className="max-w-8xl
+      ">
+        <div className="flex items-center justify-between mb-7 px-2">
+          <div className="flex items-center gap-2">
+            <img src="/placeholder-logo.png" alt="Uno Logo" style={{ height: '42px', objectFit: 'contain', aspectRatio: 'auto' }} />
           </div>
-
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={() => navigateWeek("up")}>
-                <ChevronUp className="w-4 h-4 mr-2" />
-                Previous Week
-              </Button>
-              <Button variant="outline" onClick={() => setCurrentWeekDate(new Date())}>
-                Today
-              </Button>
-              <Button variant="outline" onClick={() => navigateWeek("down")}>
-                Next Week
-                <ChevronDown className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 bg-green-50 rounded-lg p-1">
-                <Select value={recurringType} onValueChange={(value: "daily" | "weekly") => setRecurringType(value)}>
-                  <SelectTrigger className="h-8 w-20 border-0 bg-transparent">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button variant="outline" className="h-8 bg-white hover:bg-gray-50" onClick={handleRecurringTasksClick}>
-                  <Repeat className="w-4 h-4 mr-2" />
-                  Add {recurringType}
-                </Button>
-              </div>
-              <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setIsCreateModalOpen(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                New Task
-              </Button>
-            </div>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => navigateWeek("up")} className="font-semibold px-3 py-1 text-xs text-black bg-transparent hover:bg-gray-100">&lt; Previous Week</Button>
+            <Button onClick={() => setCurrentWeekDate(new Date())} className="font-semibold rounded-sm px-2 py-1 text-xs bg-white text-black hover:bg-gray-100">Today</Button>
+            <Button onClick={() => navigateWeek("down")} className="font-semibold rounded-sm px-3 py-1 text-xs text-black bg-transparent hover:bg-gray-100">Next Week &gt;</Button>
+            <Select>
+              <SelectTrigger className="font-semibold px-4 w-26 text-xs text-black hover:bg-gray-100">Choose</SelectTrigger>
+              <SelectContent>
+                <SelectItem value="weekly">Weekly</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button className="font-semibold px-4 py-2 text-base bg-white text-black text-xs hover:bg-gray-100" onClick={handleRecurringTasksClick}>+ Add weekly</Button>
+            <Button className="font-semibold px-4 py-2 bg-blue-600 text-white text-xs border-none hover:bg-blue-700" >+ New Task</Button>
           </div>
         </div>
 
         <div className="space-y-4">
-          <Card className="bg-white shadow-sm border-0 ring-2 ring-blue-500 rounded-xl overflow-hidden">
+          <Card className="bg-white shadow-sm border-0 rounded-xl overflow-hidden max-w-7xl mx-auto" style={{ paddingLeft: '5%', paddingRight: '5%', paddingTop: 12, marginBottom:2 }}>
             {renderWeek(currentWeek, `This Week (${formatWeekRange(currentWeek)})`, true)}
           </Card>
 
@@ -965,7 +1014,7 @@ export default function UnoCalendar() {
                 <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
-                  value={newTask.description}
+                  value={newTask.description || ""}
                   onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
                   placeholder="Task description"
                   rows={5}

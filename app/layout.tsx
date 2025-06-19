@@ -14,7 +14,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <head>
+        <link rel="icon" href="/favicon.png" />
+      </head>
+      <body>
+        <div style={{ minHeight: '100vh', background: '#f7f6ed', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', fontFamily: 'Montserrat, sans-serif' }}>
+          <main style={{ width: '100%', maxWidth: 1200, margin: 'auto', padding: '32px 24px', borderRadius: 24 }}>
+            {children}
+          </main>
+        </div>
+      </body>
     </html>
   )
 }
