@@ -24,6 +24,7 @@ interface Task {
   recurring: "no" | "daily" | "weekly" | "monthly"
   created_at?: string
   updated_at?: string
+  type?: string
 }
 
 interface TaskPosition {
@@ -36,34 +37,48 @@ interface TaskPosition {
 
 const statusOptions = {
   // To-do statuses
-  "Follow Up": { color: "bg-amber-500", category: "To-do" },
-  "Night Work": { color: "bg-purple-500", category: "To-do" },
-  Pending: { color: "bg-pink-500", category: "To-do" },
-  Later: { color: "bg-gray-500", category: "To-do" },
-  "Search BGM & Trim SFX": { color: "bg-red-500", category: "To-do" },
-  "Not started": { color: "bg-gray-400", category: "To-do" },
+  "Follow Up": { color: "bg-amber-500", hex: "#f59e42", category: "To-do" },
+  "Night Work": { color: "bg-purple-500", hex: "#a78bfa", category: "To-do" },
+  Pending: { color: "bg-pink-500", hex: "#ec4899", category: "To-do" },
+  Later: { color: "bg-gray-500", hex: "#6b7280", category: "To-do" },
+  "Search BGM & Trim SFX": { color: "bg-red-500", hex: "#ef4444", category: "To-do" },
+  "Not started": { color: "bg-gray-400", hex: "#9ca3af", category: "To-do" },
 
   // In progress statuses
-  Everyday: { color: "bg-pink-500", category: "In progress" },
-  "Ready To Render": { color: "bg-amber-500", category: "In progress" },
-  "Rough Cut": { color: "bg-amber-600", category: "In progress" },
-  "Waiting VO or assets": { color: "bg-purple-500", category: "In progress" },
-  "Waiting Revision": { color: "bg-red-500", category: "In progress" },
-  "On Revision": { color: "bg-amber-500", category: "In progress" },
-  "In Progress": { color: "bg-amber-500", category: "In progress" },
-  "Ready deliver": { color: "bg-blue-500", category: "In progress" },
-  "Preview Done": { color: "bg-blue-500", category: "In progress" },
-  "Series Customer Review": { color: "bg-amber-500", category: "In progress" },
-  "Continue next day": { color: "bg-blue-500", category: "In progress" },
+  Everyday: { color: "bg-pink-500", hex: "#ec4899", category: "In progress" },
+  "Ready To Render": { color: "bg-amber-500", hex: "#f59e42", category: "In progress" },
+  "Rough Cut": { color: "bg-amber-600", hex: "#d97706", category: "In progress" },
+  "Waiting VO or assets": { color: "bg-purple-500", hex: "#a78bfa", category: "In progress" },
+  "Waiting Revision": { color: "bg-red-500", hex: "#ef4444", category: "In progress" },
+  "On Revision": { color: "bg-amber-500", hex: "#f59e42", category: "In progress" },
+  "In Progress": { color: "bg-amber-500", hex: "#f59e42", category: "In progress" },
+  "Ready deliver": { color: "bg-blue-500", hex: "#3b82f6", category: "In progress" },
+  "Preview Done": { color: "bg-blue-500", hex: "#3b82f6", category: "In progress" },
+  "Series Customer Review": { color: "bg-amber-500", hex: "#f59e42", category: "In progress" },
+  "Continue next day": { color: "bg-blue-500", hex: "#3b82f6", category: "In progress" },
 
   // Completed statuses
-  Done: { color: "bg-green-500", category: "Completed" },
-  Meeting: { color: "bg-purple-500", category: "Completed" },
+  Done: { color: "bg-green-500", hex: "#22c55e", category: "Completed" },
+  Meeting: { color: "bg-purple-500", hex: "#a78bfa", category: "Completed" },
 }
 
 const formatDate = (date: Date) => {
   return date.toISOString().split("T")[0]
 }
+
+// Define the fixed checklists and platforms
+const CHECKLISTS = [
+  {
+    key: 'reel',
+    label: 'Checklist for reel',
+    platforms: ['Facebook', 'Instagram', 'TikTok', 'YouTube', 'LinkedIn', 'Threads'],
+  },
+  {
+    key: 'image',
+    label: 'Checklist for image',
+    platforms: ['Facebook', 'Instagram', 'LinkedIn', 'Google Business', 'Threads'],
+  },
+];
 
 export default function UnoCalendar() {
   const currentDate = new Date()
@@ -106,6 +121,9 @@ export default function UnoCalendar() {
     delete: false,
     recurring: false,
   })
+
+  // Add a loading state for duplicate
+  const [duplicateLoading, setDuplicateLoading] = useState(false);
 
   // Get three weeks: previous, current, next
   const previousWeek = getWeekDays(new Date(currentWeekDate.getTime() - 7 * 24 * 60 * 60 * 1000))
@@ -249,6 +267,7 @@ export default function UnoCalendar() {
       status: task.status,
       priority: task.priority,
       recurring: task.recurring,
+      type: task.type,
     })
     setEditingTask(task)
     setIsCreateModalOpen(true)
@@ -856,7 +875,7 @@ export default function UnoCalendar() {
                       <div className="flex flex-col h-full">
                         <div className="flex items-center gap-2 mb-1">
                           <span
-                            className={`inline-block rounded-full align-middle ${statusOptions[task.status as keyof typeof statusOptions]?.color || 'bg-gray-400'}`}
+                            className={`inline-block align-middle ${statusOptions[task.status as keyof typeof statusOptions]?.color || 'bg-gray-400'}`}
                             style={{
                               width: '0.5rem',
                               height: '0.5rem',
@@ -864,8 +883,17 @@ export default function UnoCalendar() {
                               minHeight: '0.5rem',
                               verticalAlign: 'middle',
                               display: 'inline-block',
+                              borderRadius: task.type === 'descriptive' || !task.type ? '9999px' : undefined,
+                              background: task.type === 'checklist' ? 'none' : undefined,
+                              padding: 0,
                             }}
-                          ></span>
+                          >
+                            {task.type === 'checklist' && (
+                              <svg width="8" height="8" viewBox="0 0 8 8" style={{ display: 'block' }}>
+                                <polygon points="4,0 8,8 0,8" fill={statusOptions[task.status as keyof typeof statusOptions]?.hex || '#888'} />
+                              </svg>
+                            )}
+                          </span>
                           <div
                             className="text-gray-900 font-bold text-xs leading-tight truncate"
                             style={{
@@ -952,6 +980,45 @@ export default function UnoCalendar() {
     )
   }
 
+  const handleDuplicateTask = () => {
+    if (!editingTask) return;
+    setDuplicateLoading(true);
+    // Find all tasks with the same base title and same type
+    const baseTitle = editingTask.title.replace(/ \d+$/, '');
+    const similarTasks = tasks.filter(t => t.title.startsWith(baseTitle) && t.type === editingTask.type);
+    // Find the highest number suffix
+    let maxNum = 1;
+    similarTasks.forEach(t => {
+      const match = t.title.match(/ (\d+)$/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNum) maxNum = num;
+      }
+    });
+    const newTitle = `${baseTitle} ${maxNum + 1}`;
+    // Prepare new task data
+    const newTaskData = {
+      ...editingTask,
+      id: undefined,
+      created_at: undefined,
+      updated_at: undefined,
+      title: newTitle,
+      type: editingTask.type,
+    };
+    // Create the new task via API
+    fetch('/api/tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newTaskData),
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.task) setTasks([...tasks, data.task]);
+        setIsCreateModalOpen(false);
+      })
+      .finally(() => setDuplicateLoading(false));
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -1010,16 +1077,65 @@ export default function UnoCalendar() {
                 />
               </div>
 
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={newTask.description || ""}
-                  onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                  placeholder="Task description"
-                  rows={5}
-                />
-              </div>
+              {(editingTask?.type === 'checklist' || newTask.type === 'checklist') ? (
+                <div className="space-y-6">
+                  {CHECKLISTS.map((checklist) => {
+                    let checklistState: Record<string, string[]> = {};
+                    try {
+                      checklistState = newTask.description ? JSON.parse(newTask.description) as Record<string, string[]> : {};
+                    } catch {
+                      checklistState = {};
+                    }
+                    const checked = checklistState[checklist.key] || [];
+                    const total = checklist.platforms.length;
+                    const completed = checked.length;
+                    const percent = Math.round((completed / total) * 100);
+                    return (
+                      <div key={checklist.key} className="bg-gray-50 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-semibold text-base">{checklist.label}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold">{percent}%</span>
+                            <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                              <div className="h-2 bg-blue-500" style={{ width: `${percent}%` }} />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-4">
+                          {checklist.platforms.map((platform) => (
+                            <label key={platform} className="flex items-center gap-1 text-sm font-medium">
+                              <input
+                                type="checkbox"
+                                checked={checked.includes(platform)}
+                                onChange={e => {
+                                  let newChecked = checked.includes(platform)
+                                    ? checked.filter((p: string) => p !== platform)
+                                    : [...checked, platform];
+                                  const newState = { ...checklistState, [checklist.key]: newChecked };
+                                  setNewTask({ ...newTask, description: JSON.stringify(newState) });
+                                }}
+                                className="form-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded"
+                              />
+                              {platform}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div>
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    value={newTask.description || ""}
+                    onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                    placeholder="Task description"
+                    rows={5}
+                  />
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -1166,6 +1282,20 @@ export default function UnoCalendar() {
                     "Create"
                   )}
                 </Button>
+                {editingTask && (
+                  <Button
+                    style={{ backgroundColor: '#facc15', color: '#000' }}
+                    className="hover:bg-yellow-500 focus:bg-yellow-500 active:bg-yellow-600 border-none"
+                    onClick={handleDuplicateTask}
+                    disabled={duplicateLoading}
+                  >
+                    {duplicateLoading ? (
+                      <span className="flex items-center gap-2"><Loader2 className="animate-spin w-4 h-4" /> Duplicating...</span>
+                    ) : (
+                      'Duplicate Task'
+                    )}
+                  </Button>
+                )}
               </div>
             </div>
           </DialogContent>

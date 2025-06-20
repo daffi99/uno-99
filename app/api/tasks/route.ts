@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { title, description, start_date, end_date, status, priority, recurring } = body
+    const { title, description, start_date, end_date, status, priority, recurring, type } = body
 
     if (!title || !start_date || !end_date) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
       status,
       priority,
       recurring: recurringValue,
+      type,
     })
 
     const { data: task, error } = await supabase
@@ -66,6 +67,7 @@ export async function POST(request: NextRequest) {
         status: status || "Not started",
         priority: priority || "medium",
         recurring: recurringValue,
+        type,
       })
       .select()
       .single()
