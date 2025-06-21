@@ -1,7 +1,6 @@
 "use client"
 
-import React from "react"
-import { useState, useRef, useEffect } from "react"
+import React, { useState, useRef, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -11,7 +10,8 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Edit2, Trash2, ChevronUp, ChevronDown, GripVertical, Repeat, Loader2, Calendar } from "lucide-react"
+import { Plus, Edit2, Trash2, ChevronUp, ChevronDown, GripVertical, Repeat, Loader2, Calendar, Settings } from "lucide-react"
+import Link from "next/link"
 
 interface Task {
   id: string
@@ -35,33 +35,6 @@ interface TaskPosition {
   span: number
 }
 
-const statusOptions = {
-  // To-do statuses
-  "Follow Up": { color: "bg-amber-500", hex: "#f59e42", category: "To-do" },
-  "Night Work": { color: "bg-purple-500", hex: "#a78bfa", category: "To-do" },
-  Pending: { color: "bg-pink-500", hex: "#ec4899", category: "To-do" },
-  Later: { color: "bg-gray-500", hex: "#6b7280", category: "To-do" },
-  "Search BGM & Trim SFX": { color: "bg-red-500", hex: "#ef4444", category: "To-do" },
-  "Not started": { color: "bg-gray-400", hex: "#9ca3af", category: "To-do" },
-
-  // In progress statuses
-  Everyday: { color: "bg-pink-500", hex: "#ec4899", category: "In progress" },
-  "Ready To Render": { color: "bg-amber-500", hex: "#f59e42", category: "In progress" },
-  "Rough Cut": { color: "bg-amber-600", hex: "#d97706", category: "In progress" },
-  "Waiting VO or assets": { color: "bg-purple-500", hex: "#a78bfa", category: "In progress" },
-  "Waiting Revision": { color: "bg-red-500", hex: "#ef4444", category: "In progress" },
-  "On Revision": { color: "bg-amber-500", hex: "#f59e42", category: "In progress" },
-  "In Progress": { color: "bg-amber-500", hex: "#f59e42", category: "In progress" },
-  "Ready deliver": { color: "bg-blue-500", hex: "#3b82f6", category: "In progress" },
-  "Preview Done": { color: "bg-blue-500", hex: "#3b82f6", category: "In progress" },
-  "Series Customer Review": { color: "bg-amber-500", hex: "#f59e42", category: "In progress" },
-  "Continue next day": { color: "bg-blue-500", hex: "#3b82f6", category: "In progress" },
-
-  // Completed statuses
-  Done: { color: "bg-green-500", hex: "#22c55e", category: "Completed" },
-  Meeting: { color: "bg-purple-500", hex: "#a78bfa", category: "Completed" },
-}
-
 const formatDate = (date: Date) => {
   return date.toISOString().split("T")[0]
 }
@@ -81,6 +54,8 @@ const CHECKLISTS = [
 ];
 
 export default function UnoCalendar() {
+  const [statusOptions, setStatusOptions] = useState<Record<string, { color: string; hex: string; category: string }>>({});
+  const [statusesLoaded, setStatusesLoaded] = useState(false);
   const currentDate = new Date()
 
   const [tasks, setTasks] = useState<Task[]>([])
@@ -100,6 +75,7 @@ export default function UnoCalendar() {
     startDate: string
     originalEndDate: string
     dayWidth: number
+    edge: 'left' | 'right'
   } | null>(null)
 
   const weekContainerRef = useRef<HTMLDivElement>(null)
@@ -124,6 +100,41 @@ export default function UnoCalendar() {
 
   // Add a loading state for duplicate
   const [duplicateLoading, setDuplicateLoading] = useState(false);
+  
+  useEffect(() => {
+    const fetchStatuses = async () => {
+      try {
+        const res = await fetch('/api/statuses');
+        const data = await res.json();
+        if (data.statuses) {
+          const options = data.statuses.reduce((acc: any, status: any) => {
+            acc[status.name] = { color: status.color, hex: status.hex, category: status.category };
+            return acc;
+          }, {});
+          setStatusOptions(options);
+          setStatusesLoaded(true);
+        }
+      } catch (error) {
+        console.error("Failed to fetch statuses:", error);
+      }
+    };
+    fetchStatuses();
+  }, []);
+
+  const groupedStatuses = useMemo(() => {
+    if (!statusesLoaded) return {};
+    return Object.entries(statusOptions).reduce(
+      (acc, [statusName, config]) => {
+        const category = config.category;
+        if (!acc[category]) {
+          acc[category] = [];
+        }
+        acc[category].push(statusName);
+        return acc;
+      },
+      {} as Record<string, string[]>
+    );
+  }, [statusOptions, statusesLoaded]);
 
   // Get three weeks: previous, current, next
   const previousWeek = getWeekDays(new Date(currentWeekDate.getTime() - 7 * 24 * 60 * 60 * 1000))
@@ -169,18 +180,11 @@ export default function UnoCalendar() {
     // Set new timeout
     const timeout = setTimeout(async () => {
       try {
-        const response = await fetch(`/api/tasks/${taskId}`, {
+        await fetch(`/api/tasks/${taskId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(updateData),
         })
-
-        if (!response.ok) {
-          const data = await response.json()
-          console.error("Failed to update task:", data.error)
-          // Revert optimistic update on failure
-          fetchTasks()
-        }
       } catch (error) {
         console.error("Error updating task:", error)
         fetchTasks()
@@ -207,11 +211,7 @@ export default function UnoCalendar() {
       const response = await fetch(`/api/tasks?startDate=${startDate}&endDate=${endDate}`)
       const data = await response.json()
 
-      if (response.ok) {
         setTasks(data.tasks || [])
-      } else {
-        console.error("Failed to fetch tasks:", data.error)
-      }
     } catch (error) {
       console.error("Error fetching tasks:", error)
     } finally {
@@ -221,8 +221,10 @@ export default function UnoCalendar() {
 
   // Load tasks on component mount and when week changes
   useEffect(() => {
+    if (statusesLoaded) {
     fetchTasks()
-  }, [currentWeekDate])
+    }
+  }, [currentWeekDate, statusesLoaded])
 
   const handleCreateTask = async () => {
     if (!newTask.title) return
@@ -288,7 +290,6 @@ export default function UnoCalendar() {
 
       if (response.ok) {
         setTasks(tasks.map((task) => (task.id === editingTask.id ? data.task : task)))
-        setEditingTask(null)
         resetForm()
       } else {
         console.error("Failed to update task:", data.error)
@@ -303,8 +304,9 @@ export default function UnoCalendar() {
   }
 
   const handleDeleteTask = async (taskId: string) => {
+    if (!confirm("Are you sure you want to delete this task?")) return;
     try {
-      setModalLoading((prev) => ({ ...prev, delete: true }))
+      setModalLoading((prev) => ({...prev, delete: true}))
       const response = await fetch(`/api/tasks/${taskId}`, {
         method: "DELETE",
       })
@@ -312,15 +314,12 @@ export default function UnoCalendar() {
       if (response.ok) {
         setTasks(tasks.filter((task) => task.id !== taskId))
       } else {
-        const data = await response.json()
-        console.error("Failed to delete task:", data.error)
-        alert(`Failed to delete task: ${data.error}`)
+        console.error("Failed to delete task")
       }
-    } catch (error) {
-      console.error("Error deleting task:", error)
-      alert("Error deleting task. Please try again.")
+    } catch(e) {
+      console.error("Failed to delete task", e)
     } finally {
-      setModalLoading((prev) => ({ ...prev, delete: false }))
+      setModalLoading((prev) => ({...prev, delete: false}))
     }
   }
 
@@ -341,114 +340,69 @@ export default function UnoCalendar() {
   }
 
   const handleRecurringTasksClick = () => {
-    const recurringTasks = tasks.filter((task) => task.recurring === recurringType)
+    const prevWeekStart = formatDate(previousWeek[0]);
+    const prevWeekEnd = formatDate(previousWeek[6]);
+    const recurringTasksFromPrevWeek = tasks.filter(task =>
+        task.recurring === 'weekly' &&
+        task.start_date >= prevWeekStart &&
+        task.start_date <= prevWeekEnd
+    );
 
-    if (recurringTasks.length === 0) {
-      alert(`No ${recurringType} recurring tasks found.`)
-      return
+    if (recurringTasksFromPrevWeek.length === 0) {
+        alert(`No weekly recurring tasks found in the previous week.`);
+        return;
     }
 
-    // Get current week date range
-    const currentWeekStart = formatDate(currentWeek[0])
-    const currentWeekEnd = formatDate(currentWeek[6])
+    const currentWeekStart = formatDate(currentWeek[0]);
+    const currentWeekEnd = formatDate(currentWeek[6]);
+    
+    const tasksToAdd: Task[] = [];
 
-    let tasksToAdd: Task[] = []
+    recurringTasksFromPrevWeek.forEach((task) => {
+        const taskExistsInCurrentWeek = tasks.some(
+            (t) => t.title === task.title && t.start_date >= currentWeekStart && t.start_date <= currentWeekEnd
+        );
 
-    if (recurringType === "weekly") {
-      // Weekly logic (same as before)
-      const existingTitlesInCurrentWeek = tasks
-        .filter((task) => task.start_date >= currentWeekStart && task.start_date <= currentWeekEnd)
-        .map((task) => task.title)
-
-      tasksToAdd = recurringTasks.filter((task) => !existingTitlesInCurrentWeek.includes(task.title))
-    } else if (recurringType === "daily") {
-      // Daily logic - for each daily recurring task, create copies for each day of current week
-      const existingTasksInCurrentWeek = tasks.filter(
-        (task) => task.start_date >= currentWeekStart && task.start_date <= currentWeekEnd,
-      )
-
-      for (const recurringTask of recurringTasks) {
-        // For each day of the current week, check if this task already exists
-        for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
-          const targetDate = addDays(currentWeekStart, dayOffset)
-          const taskDuration = getDaysDifference(recurringTask.start_date, recurringTask.end_date)
-          const targetEndDate = addDays(targetDate, taskDuration)
-
-          // Check if a task with the same title already exists on this date
-          const existsOnDate = existingTasksInCurrentWeek.some(
-            (task) => task.title === recurringTask.title && task.start_date === targetDate,
-          )
-
-          if (!existsOnDate) {
+        if (!taskExistsInCurrentWeek) {
+            const originalDayIndex = previousWeek.findIndex(d => formatDate(d) === task.start_date);
+            if (originalDayIndex !== -1) {
+                const newStartDate = formatDate(currentWeek[originalDayIndex]);
+                const duration = getDaysDifference(task.start_date, task.end_date);
+                const newEndDate = addDays(newStartDate, duration);
+                
             tasksToAdd.push({
-              ...recurringTask,
-              start_date: targetDate,
-              end_date: targetEndDate,
-            })
+                    ...task,
+                    start_date: newStartDate,
+                    end_date: newEndDate,
+                });
           }
         }
-      }
-    }
+    });
 
     if (tasksToAdd.length === 0) {
-      alert(`No new ${recurringType} recurring tasks to add. All tasks already exist in current week.`)
-      return
+        alert(`All weekly recurring tasks from the previous week are already present this week.`);
+        return;
     }
 
-    setRecurringTasksToAdd(tasksToAdd)
-    setIsRecurringModalOpen(true)
+    setRecurringTasksToAdd(tasksToAdd);
+    setIsRecurringModalOpen(true);
   }
 
   const handleConfirmRecurringTasks = async () => {
+    if (recurringTasksToAdd.length === 0) return
+
     try {
       setModalLoading((prev) => ({ ...prev, recurring: true }))
-
-      let newRecurringTasks: any[] = []
-
-      if (recurringType === "weekly") {
-        const currentWeekStart = formatDate(currentWeek[0])
-
-        newRecurringTasks = recurringTasksToAdd.map((task) => {
-          // Calculate days difference from original start to move to current week
-          const originalDate = new Date(task.start_date)
-          const currentWeekStartDate = new Date(currentWeekStart)
-          const dayOfWeek = originalDate.getDay()
-          const targetDate = new Date(currentWeekStartDate)
-          targetDate.setDate(currentWeekStartDate.getDate() + (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
-
-          const newStartDate = formatDate(targetDate)
-          const taskDuration = getDaysDifference(task.start_date, task.end_date)
-          const newEndDate = addDays(newStartDate, taskDuration)
-
-          return {
-            title: task.title,
-            description: task.description,
-            start_date: newStartDate,
-            end_date: newEndDate,
-            status: "Not started",
-            priority: task.priority,
-            recurring: task.recurring,
-          }
-        })
-      } else {
-        // Daily tasks are already prepared with correct dates
-        newRecurringTasks = recurringTasksToAdd.map((task) => ({
-          title: task.title,
-          description: task.description,
-          start_date: task.start_date,
-          end_date: task.end_date,
-          status: "Not started",
-          priority: task.priority,
-          recurring: task.recurring,
-        }))
-      }
-
-      console.log("Sending recurring tasks:", newRecurringTasks)
-
+      const tasksToCreate = recurringTasksToAdd.map(task => {
+        const { id, created_at, updated_at, ...rest } = task
+        return rest
+      })
       const response = await fetch("/api/tasks/recurring", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tasks: newRecurringTasks }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ tasks: tasksToCreate }),
       })
 
       if (!response.ok) {
@@ -508,7 +462,7 @@ export default function UnoCalendar() {
     setIsCreateModalOpen(true)
   }
 
-  const handleResizeStart = (e: React.MouseEvent, task: Task) => {
+  const handleResizeStart = (e: React.MouseEvent, task: Task, edge: 'left' | 'right') => {
     e.preventDefault()
     e.stopPropagation()
 
@@ -522,6 +476,7 @@ export default function UnoCalendar() {
         startDate: task.start_date,
         originalEndDate: task.end_date,
         dayWidth,
+        edge,
       })
     }
   }
@@ -532,11 +487,25 @@ export default function UnoCalendar() {
     const deltaX = e.clientX - resizingTask.startX
     const daysDelta = Math.round(deltaX / resizingTask.dayWidth)
 
+    if (resizingTask.edge === 'left') {
+      const newStartDate = addDays(resizingTask.startDate, daysDelta)
+      if (new Date(newStartDate) <= new Date(resizingTask.originalEndDate)) {
+        setTasks(tasks.map((t) =>
+          t.id === resizingTask.taskId
+            ? { ...t, start_date: newStartDate }
+            : t
+        ))
+      }
+    } else {
     const originalDuration = getDaysDifference(resizingTask.startDate, resizingTask.originalEndDate)
     const newDuration = Math.max(0, originalDuration + daysDelta)
     const newEndDate = addDays(resizingTask.startDate, newDuration)
-
-    setTasks(tasks.map((t) => (t.id === resizingTask.taskId ? { ...t, end_date: newEndDate } : t)))
+      setTasks(tasks.map((t) =>
+        t.id === resizingTask.taskId
+          ? { ...t, end_date: newEndDate }
+          : t
+      ))
+    }
   }
 
   const handleMouseUp = async () => {
@@ -552,6 +521,23 @@ export default function UnoCalendar() {
     debouncedUpdate(resizingTask.taskId, task, 500)
 
     setResizingTask(null)
+  }
+
+  const handleNewTaskClick = () => {
+    setEditingTask(null)
+    setClickedDate("")
+    const today = formatDate(new Date())
+    setNewTask({
+      title: "",
+      description: "",
+      start_date: today,
+      end_date: today,
+      status: "Not started",
+      priority: "medium",
+      recurring: "no",
+      type: "descriptive",
+    })
+    setIsCreateModalOpen(true)
   }
 
   // Add event listeners for resize
@@ -577,6 +563,7 @@ export default function UnoCalendar() {
       recurring: "no",
     })
     setIsCreateModalOpen(false)
+    setEditingTask(null)
     setClickedDate("")
   }
 
@@ -718,17 +705,6 @@ export default function UnoCalendar() {
     return `${start.toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${end.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
   }
 
-  const groupedStatuses = Object.entries(statusOptions).reduce(
-    (acc, [status, config]) => {
-      if (!acc[config.category]) {
-        acc[config.category] = []
-      }
-      acc[config.category].push(status)
-      return acc
-    },
-    {} as Record<string, string[]>,
-  )
-
   const renderWeek = (weekDays: Date[], weekLabel: string, isCurrentWeek = false) => {
     const weekStart = formatDate(weekDays[0])
     const weekEnd = formatDate(weekDays[6])
@@ -744,122 +720,45 @@ export default function UnoCalendar() {
     const maxTop = Math.max(...taskPositions.map((pos) => pos.top + pos.height), 200)
 
     return (
-      <div className="rounded-xl overflow-hidden">
-        <div className="px-4 py-4 text-sm font-bold text-center" style={{ background: 'transparent', color: '#222' }}>{weekLabel}</div>
-        <div className="relative" ref={isCurrentWeek ? weekContainerRef : null}>
-          <div className="relative">
-            <div className="grid grid-cols-7 relative z-10">
+      <div className="border-x border-b border-gray-200 bg-white rounded-lg overflow-hidden">
+        <div className="grid grid-cols-7 divide-x divide-gray-200">
               {weekDays.map((day, index) => (
-                <div
-                  key={index}
-                  className={`
-                    p-3 text-center
-                    ${index === 0 ? 'border-l border-gray-200' : ''}
-                    ${index === 6 ? 'border-r border-gray-200' : ''}
-                    border-t-0 border-b-0 border-y-0
-                    h-full
-                  `}
-                  style={{
-                    borderLeft: index === 0 ? '1px solid #e5e7eb' : undefined,
-                    borderRight: index === 6 ? '1px solid #e5e7eb' : undefined,
-                    borderTop: 'none',
-                    borderBottom: 'none',
-                  }}
-                >
-                  <div className="text-xs font-medium mb-1" style={{ color: '#888' }}>{formatDayName(day)}</div>
-                  <div
-                    className="text-lg font-bold"
-                    style={{ color: formatDate(day) === formatDate(new Date()) ? '#2563eb' : '#222' }}
-                  >
-                    {formatDisplayDate(day)}
-                  </div>
+            <div key={index} className="p-2 text-center">
+              <div className="text-sm font-medium text-gray-500">{formatDayName(day)}</div>
+              <div className="text-lg font-bold text-gray-900">{formatDisplayDate(day)}</div>
                 </div>
               ))}
             </div>
-            {weekDays.slice(1).map((_, index) => (
-              <div
-                key={index}
-                className="absolute top-0 bottom-0"
-                style={{
-                  left: `${((index + 1) * 100) / 7}%`,
-                  width: '1px',
-                  background: '#e5e7eb',
-                  zIndex: 5,
-                  height: '100%',
-                }}
-              />
-            ))}
-          </div>
-          <div className="relative" style={{ minHeight: `${maxTop + 20}px` }}>
-            {/* Divider at the very start (before Monday) */}
-            <div
-              style={{
-                position: 'absolute',
-                left: 0,
-                top: 0,
-                bottom: 0,
-                width: '1px',
-                backgroundColor: '#e5e7eb',
-                zIndex: 5,
-                pointerEvents: 'none',
-              }}
-            />
-            {/* Dividers between days */}
-            {Array.from({ length: 7 }).map((_, index) => (
-              <div
-                key={index}
-                style={{
-                  position: 'absolute',
-                  left: `${((index + 1) * 100) / 7}%`,
-                  top: 0,
-                  bottom: 0,
-                  width: '1px',
-                  backgroundColor: '#e5e7eb',
-                  zIndex: 5,
-                  pointerEvents: 'none',
-                }}
-              />
-            ))}
-            {/* Divider at the very end (after Sunday) */}
-            <div
-              style={{
-                position: 'absolute',
-                left: 'calc(100% - 1px)',
-                top: 0,
-                bottom: 0,
-                width: '1px',
-                backgroundColor: '#e5e7eb',
-                zIndex: 5,
-                pointerEvents: 'none',
-              }}
-            />
-            <div className="grid grid-cols-7 h-full absolute inset-0 z-10">
-              {weekDays.map((day, index) => (
+
+        <div
+          ref={isCurrentWeek ? weekContainerRef : null}
+          className="relative h-full"
+          style={{ minHeight: `${maxTop}px` }}
+        >
+          <div className="absolute inset-0 grid grid-cols-7 divide-x divide-gray-200">
+            {weekDays.map((day) => (
                 <div
-                  key={index}
-                  className="cursor-pointer p-2 day-drop-target"
+                key={formatDate(day)}
+                className="relative h-full"
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, formatDate(day))}
-                  onClick={() => isCurrentWeek && handleDateClick(formatDate(day))}
-                  style={{ background: 'transparent' }}
-                >
-                  {getTasksForDate(formatDate(day)).length === 0 && isCurrentWeek && (
-                    <div className="text-center text-gray-400 text-xs py-8">Click to add task</div>
-                  )}
-                </div>
+                onClick={() => handleDateClick(formatDate(day))}
+              />
               ))}
             </div>
+          
             <div className="absolute inset-0 pointer-events-none">
-              <div className="flex-1 flex flex-col gap-0">
                 {weekTasks.map((task) => {
-                  const taskPos = taskPositions.find((pos) => pos.taskId === task.id)
                   const position = getTaskPosition(task, weekDays)
+              const taskPos = taskPositions.find(p => p.taskId === task.id)
+              if (!position || !taskPos) return null
+
                   const isUpdating = updatingTasks.has(task.id)
-                  if (!taskPos || !position) return null
+
                   return (
                     <div
                       key={task.id}
-                      className={`absolute bg-white rounded-lg p-2 pb-2 shadow-md hover:shadow-lg transition-shadow group cursor-move pointer-events-auto ${isUpdating ? 'opacity-75' : ''}`}
+                  className={`absolute bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow group pointer-events-auto ${isUpdating ? 'opacity-75' : ''}`}
                       style={{
                         left: position.left,
                         width: position.width,
@@ -868,14 +767,34 @@ export default function UnoCalendar() {
                         border: 'none',
                         zIndex: 10,
                       }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Left resize edge - at the very edge, above padding */}
+                  <div
+                    className="absolute left-0 top-0 h-full w-2 md:w-3 cursor-ew-resize z-30"
+                    onMouseDown={e => handleResizeStart(e, task, 'left')}
+                    style={{ background: 'rgba(0,0,0,0)' }}
+                    title="Resize task from left"
+                    draggable={false}
+                  />
+                  {/* Right resize edge - at the very edge, above padding */}
+                  <div
+                    className="absolute right-0 top-0 h-full w-2 md:w-3 cursor-ew-resize z-30"
+                    onMouseDown={e => handleResizeStart(e, task, 'right')}
+                    style={{ background: 'rgba(0,0,0,0)' }}
+                    title="Resize task from right"
+                    draggable={false}
+                  />
+                  {/* Card content with padding */}
+                  <div 
+                    className="relative h-full p-2 pb-2 cursor-move"
                       draggable
                       onDragStart={() => handleDragStart(task)}
-                      onClick={(e) => e.stopPropagation()}
                     >
                       <div className="flex flex-col h-full">
                         <div className="flex items-center gap-2 mb-1">
                           <span
-                            className={`inline-block align-middle ${statusOptions[task.status as keyof typeof statusOptions]?.color || 'bg-gray-400'}`}
+                          className="inline-block align-middle"
                             style={{
                               width: '0.5rem',
                               height: '0.5rem',
@@ -883,17 +802,31 @@ export default function UnoCalendar() {
                               minHeight: '0.5rem',
                               verticalAlign: 'middle',
                               display: 'inline-block',
-                              borderRadius: task.type === 'descriptive' || !task.type ? '9999px' : undefined,
-                              background: task.type === 'checklist' ? 'none' : undefined,
-                              padding: 0,
+                            borderRadius: task.type === 'descriptive' || !task.type ? '9999px' : undefined,
+                            background: !isUpdating && (task.type === 'descriptive' || !task.type)
+                              ? undefined
+                              : 'none',
+                            padding: 0,
                             }}
-                          >
-                            {task.type === 'checklist' && (
-                              <svg width="8" height="8" viewBox="0 0 8 8" style={{ display: 'block' }}>
-                                <polygon points="4,0 8,8 0,8" fill={statusOptions[task.status as keyof typeof statusOptions]?.hex || '#888'} />
-                              </svg>
-                            )}
-                          </span>
+                        >
+                          {isUpdating ? (
+                            <Loader2 className="animate-spin w-3 h-3" style={{ color: statusOptions[task.status as keyof typeof statusOptions]?.hex || '#888' }} />
+                          ) : task.type === 'checklist' ? (
+                            <svg width="8" height="8" viewBox="0 0 8 8" style={{ display: 'block' }}>
+                              <polygon points="4,0 8,8 0,8" fill={statusOptions[task.status as keyof typeof statusOptions]?.hex || '#888'} />
+                            </svg>
+                          ) : (
+                            <span
+                              className={statusOptions[task.status as keyof typeof statusOptions]?.color || 'bg-gray-400'}
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                display: 'block',
+                                borderRadius: '9999px',
+                              }}
+                            />
+                          )}
+                        </span>
                           <div
                             className="text-gray-900 font-bold text-xs leading-tight truncate"
                             style={{
@@ -960,11 +893,6 @@ export default function UnoCalendar() {
                             >
                               <Edit2 className="w-3 h-3" />
                             </Button>
-                            <div
-                              className="w-4 h-6 cursor-ew-resize flex items-center justify-center"
-                              onMouseDown={(e) => handleResizeStart(e, task)}
-                            >
-                              <GripVertical className="w-3 h-3 text-gray-400" />
                             </div>
                           </div>
                         </div>
@@ -972,8 +900,6 @@ export default function UnoCalendar() {
                     </div>
                   )
                 })}
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -1019,12 +945,38 @@ export default function UnoCalendar() {
       .finally(() => setDuplicateLoading(false));
   };
 
-  if (loading) {
+  const currentWeekRecurringCount = useMemo(() => {
+    const weekStart = formatDate(currentWeek[0]);
+    const weekEnd = formatDate(currentWeek[6]);
+    return tasks.filter(task =>
+      task.recurring !== 'no' &&
+      (
+        (task.start_date >= weekStart && task.start_date <= weekEnd) ||
+        (task.end_date >= weekStart && task.end_date <= weekEnd) ||
+        (task.start_date <= weekStart && task.end_date >= weekEnd)
+      )
+    ).length;
+  }, [tasks, currentWeek]);
+
+  const nextWeekRecurringCount = useMemo(() => {
+    const weekStart = formatDate(nextWeek[0]);
+    const weekEnd = formatDate(nextWeek[6]);
+    return tasks.filter(task =>
+      task.recurring !== 'no' &&
+      (
+        (task.start_date >= weekStart && task.start_date <= weekEnd) ||
+        (task.end_date >= weekStart && task.end_date <= weekEnd) ||
+        (task.start_date <= weekStart && task.end_date >= weekEnd)
+      )
+    ).length;
+  }, [tasks, nextWeek]);
+
+  if (loading || !statusesLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex items-center gap-2">
           <Loader2 className="w-6 h-6 animate-spin" />
-          <span>Loading tasks...</span>
+          <span>Loading...</span>
         </div>
       </div>
     )
@@ -1042,23 +994,42 @@ export default function UnoCalendar() {
             <Button onClick={() => navigateWeek("up")} className="font-semibold px-3 py-1 text-xs text-black bg-transparent hover:bg-gray-100">&lt; Previous Week</Button>
             <Button onClick={() => setCurrentWeekDate(new Date())} className="font-semibold rounded-sm px-2 py-1 text-xs bg-white text-black hover:bg-gray-100">Today</Button>
             <Button onClick={() => navigateWeek("down")} className="font-semibold rounded-sm px-3 py-1 text-xs text-black bg-transparent hover:bg-gray-100">Next Week &gt;</Button>
-            <Select>
+            {/* <Select>
               <SelectTrigger className="font-semibold px-4 w-26 text-xs text-black hover:bg-gray-100">Choose</SelectTrigger>
               <SelectContent>
                 <SelectItem value="weekly">Weekly</SelectItem>
               </SelectContent>
-            </Select>
+            </Select> */}
             <Button className="font-semibold px-4 py-2 text-base bg-white text-black text-xs hover:bg-gray-100" onClick={handleRecurringTasksClick}>+ Add weekly</Button>
-            <Button className="font-semibold px-4 py-2 bg-blue-600 text-white text-xs border-none hover:bg-blue-700" >+ New Task</Button>
+            <Button className="font-semibold px-4 py-2 bg-blue-600 text-white text-xs border-none hover:bg-blue-700" onClick={handleNewTaskClick}>+</Button>
+            <Link href="/settings">
+              <Button className="font-semibold p-3 bg-blue-600 text-white text-xs border-none hover:bg-blue-700">
+                <Settings className="w-4 h-4" />
+              </Button>
+            </Link>
           </div>
         </div>
 
         <div className="space-y-4">
           <Card className="bg-white shadow-sm border-0 rounded-xl overflow-hidden max-w-7xl mx-auto" style={{ paddingLeft: '5%', paddingRight: '5%', paddingTop: 12, marginBottom:2 }}>
+            <div className="text-center mb-4 px-2">
+              <h2 className="text-xl font-bold text-gray-800">{formatWeekRange(currentWeek)}</h2>
+              <p className="text-sm text-gray-500">
+                {currentWeekRecurringCount} recurring task{currentWeekRecurringCount !== 1 ? 's' : ''}
+              </p>
+            </div>
             {renderWeek(currentWeek, `This Week (${formatWeekRange(currentWeek)})`, true)}
           </Card>
 
-          <Card className="bg-white shadow-sm border-0">{renderWeek(nextWeek, formatWeekRange(nextWeek))}</Card>
+          <Card className="bg-white shadow-sm border-0 rounded-xl overflow-hidden max-w-7xl mx-auto mt-8" style={{ paddingLeft: '5%', paddingRight: '5%', paddingTop: 12, marginBottom:2 }}>
+             <div className="text-center mb-4 px-2">
+                <h2 className="text-xl font-bold text-gray-800">{formatWeekRange(nextWeek)}</h2>
+                <p className="text-sm text-gray-500">
+                  {nextWeekRecurringCount} recurring task{nextWeekRecurringCount !== 1 ? 's' : ''}
+                </p>
+             </div>
+            {renderWeek(nextWeek, formatWeekRange(nextWeek))}
+            </Card>
         </div>
 
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
@@ -1125,16 +1096,16 @@ export default function UnoCalendar() {
                   })}
                 </div>
               ) : (
-                <div>
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={newTask.description || ""}
-                    onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                    placeholder="Task description"
-                    rows={5}
-                  />
-                </div>
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={newTask.description || ""}
+                  onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                  placeholder="Task description"
+                  rows={5}
+                />
+              </div>
               )}
 
               <div className="grid grid-cols-2 gap-4">
