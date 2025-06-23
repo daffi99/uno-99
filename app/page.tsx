@@ -374,6 +374,9 @@ export default function UnoCalendar() {
                     ...task,
                     start_date: newStartDate,
                     end_date: newEndDate,
+                    status: (task.status === 'Meeting' || task.status === 'Holiday') ? task.status : 'Not started',
+                    type: task.type,
+                    description: task.type === 'checklist' ? '' : task.description,
                 });
           }
         }
@@ -603,14 +606,14 @@ export default function UnoCalendar() {
     return {
       startCol: startIndex,
       span: span,
-      left: `calc(${(startIndex * 100) / 7}% + 4px)`,
-      width: `calc(${(span * 100) / 7}% - 10px)`,
+      left: `calc(${(startIndex * 100) / 7}% + 13px)`,
+      width: `calc(${(span * 90) / 7}% - 10px)`,
     }
   }
 
   // Smart stacking algorithm`
   const calculateTaskPositions = (weekDays: Date[], weekTasks: Task[]) => {
-    const TASK_HEIGHT = 70
+    const TASK_HEIGHT = 67
     const START_TOP = 8
 
     const columnOccupancy: number[][] = Array(7)

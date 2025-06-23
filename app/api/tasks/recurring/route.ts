@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
         status: task.status || "Not started",
         priority: task.priority || "medium",
         recurring: recurringValue,
+        type: task.type,
       }
     })
 
