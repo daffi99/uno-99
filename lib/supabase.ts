@@ -20,6 +20,7 @@ export type Database = {
           recurring: "no" | "daily" | "weekly" | "monthly"
           created_at: string
           updated_at: string
+          type: string
         }
         Insert: {
           id?: string
@@ -32,6 +33,7 @@ export type Database = {
           recurring?: "no" | "daily" | "weekly" | "monthly"
           created_at?: string
           updated_at?: string
+          type?: string
         }
         Update: {
           id?: string
@@ -44,6 +46,56 @@ export type Database = {
           recurring?: "no" | "daily" | "weekly" | "monthly"
           created_at?: string
           updated_at?: string
+          type?: string
+        }
+      }
+      statuses: {
+        Row: {
+          id: number
+          name: string
+          color: string
+          hex: string
+          category: string
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          name: string
+          color: string
+          hex: string
+          category: string
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          name?: string
+          color?: string
+          hex?: string
+          category?: string
+          created_at?: string
+        }
+      }
+      colors: {
+        Row: {
+          id: string
+          name: string
+          hex: string
+          tailwind_class: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          hex: string
+          tailwind_class: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          hex?: string
+          tailwind_class?: string
+          created_at?: string
         }
       }
     }

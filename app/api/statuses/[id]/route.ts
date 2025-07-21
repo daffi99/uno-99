@@ -33,4 +33,4 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   }
 
   return new Response(null, { status: 204 })
-} 
+}
