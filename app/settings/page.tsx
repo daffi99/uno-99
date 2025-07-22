@@ -107,6 +107,9 @@ export default function SettingsPage() {
   const handleSave = async () => {
     if (!editingStatus) return
 
+    // --- DEBUG LOG: Check editingStatus before validation ---
+    console.log("handleSave: editingStatus before validation:", editingStatus)
+
     // Client-side validation for statuses
     if (!editingStatus.name) {
       alert("Status Name is required.")
@@ -197,6 +200,9 @@ export default function SettingsPage() {
       // Ensure hex is set from matchedColor if found, otherwise use existing or fallback
       hex: matchedColor?.hex || statusToEdit.hex || emptyStatus.hex,
     }
+
+    // --- DEBUG LOG: Check updatedStatus after matching logic ---
+    console.log("handleEditStatusClick: updatedStatus after matching:", updatedStatus)
 
     setEditingStatus(updatedStatus)
   }
