@@ -181,8 +181,13 @@ export default function SettingsPage() {
 
   // New handler to prepare editingStatus with correct color data
   const handleEditStatusClick = (statusToEdit: Status) => {
-    // Find the corresponding color from availableColors based on the hex code
-    const matchedColor = availableColors.find((color) => color.hex === statusToEdit.hex)
+    // Try to find a matching color from availableColors based on hex
+    let matchedColor = availableColors.find((color) => color.hex === statusToEdit.hex)
+
+    // If no hex match, try to find a match based on tailwind_class
+    if (!matchedColor) {
+      matchedColor = availableColors.find((color) => color.tailwind_class === statusToEdit.color)
+    }
 
     // Create a new status object with potentially updated color and hex
     const updatedStatus: Status = {
