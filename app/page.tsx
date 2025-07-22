@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -121,19 +122,55 @@ export default function UnoCalendar() {
     fetchStatuses();
   }, []);
 
-  const groupedStatuses = useMemo(() => {
+  // Two-column grouped statuses for popover
+  const groupedStatuses = useMemo((): {
+    "Column 1": { [key: string]: string[] };
+    "Column 2": { [key: string]: string[] };
+  } => {
+    if (!statusesLoaded) return { "Column 1": { "To-do": [] , "Completed": [] }, "Column 2": { "In progress": [] } };
+    
+    const columns: {
+      "Column 1": { [key: string]: string[] };
+      "Column 2": { [key: string]: string[] };
+    } = {
+      "Column 1": { "To-do": [], "Completed": [] },
+      "Column 2": { "In progress": [] },
+    };
+
+    const allStatuses = Object.entries(statusOptions);
+
+    for (const [statusName, config] of allStatuses) {
+      if (config.category === "In progress") {
+        columns["Column 2"]["In progress"].push(statusName);
+      } else if (config.category === "To-do") {
+        columns["Column 1"]["To-do"].push(statusName);
+      } else if (config.category === "Completed") {
+        columns["Column 1"]["Completed"].push(statusName);
+      }
+    }
+
+    // Sort statuses within each category
+    Object.values(columns).forEach(column => {
+        Object.values(column).forEach(statusList => {
+            statusList.sort();
+        });
+    });
+    
+    return columns;
+  }, [statusOptions, statusesLoaded]);
+
+  // For the Select dropdown, flatten groupedStatuses to a single-level category grouping
+  const selectGroupedStatuses = useMemo(() => {
     if (!statusesLoaded) return {};
-    return Object.entries(statusOptions).reduce(
-      (acc, [statusName, config]) => {
-        const category = config.category;
-        if (!acc[category]) {
-          acc[category] = [];
-        }
-        acc[category].push(statusName);
-        return acc;
-      },
-      {} as Record<string, string[]>
-    );
+    const categories: Record<string, string[]> = { "To-do": [], "In progress": [], "Completed": [] };
+    Object.entries(statusOptions).forEach(([statusName, config]) => {
+      if (categories[config.category]) {
+        categories[config.category].push(statusName);
+      }
+    });
+    // Sort statuses in each category
+    Object.values(categories).forEach(list => list.sort());
+    return categories;
   }, [statusOptions, statusesLoaded]);
 
   // Get three weeks: previous, current, next
@@ -797,7 +834,7 @@ export default function UnoCalendar() {
                       <div className="flex flex-col h-full">
                         <div className="flex items-center gap-2 mb-1">
                           <span
-                          className="inline-block align-middle"
+                            className="inline-block align-middle"
                             style={{
                               width: '0.5rem',
                               height: '0.5rem',
@@ -805,31 +842,20 @@ export default function UnoCalendar() {
                               minHeight: '0.5rem',
                               verticalAlign: 'middle',
                               display: 'inline-block',
-                            borderRadius: task.type === 'descriptive' || !task.type ? '9999px' : undefined,
-                            background: !isUpdating && (task.type === 'descriptive' || !task.type)
-                              ? undefined
-                              : 'none',
-                            padding: 0,
+                              borderRadius: task.type === 'descriptive' || !task.type ? '9999px' : undefined,
+                              backgroundColor: isUpdating ? 'none' : statusOptions[task.status as keyof typeof statusOptions]?.hex || '#888',
+                              padding: 0,
                             }}
-                        >
-                          {isUpdating ? (
-                            <Loader2 className="animate-spin w-3 h-3" style={{ color: statusOptions[task.status as keyof typeof statusOptions]?.hex || '#888' }} />
-                          ) : task.type === 'checklist' ? (
-                            <svg width="8" height="8" viewBox="0 0 8 8" style={{ display: 'block' }}>
-                              <polygon points="4,0 8,8 0,8" fill={statusOptions[task.status as keyof typeof statusOptions]?.hex || '#888'} />
-                            </svg>
-                          ) : (
-                            <span
-                              className={statusOptions[task.status as keyof typeof statusOptions]?.color || 'bg-gray-400'}
-                              style={{
-                                width: '100%',
-                                height: '100%',
-                                display: 'block',
-                                borderRadius: '9999px',
-                              }}
-                            />
-                          )}
-                        </span>
+                          >
+                            {isUpdating && (
+                              <Loader2 className="animate-spin w-3 h-3" style={{ color: statusOptions[task.status as keyof typeof statusOptions]?.hex || '#888' }} />
+                            )}
+                            {task.type === 'checklist' && !isUpdating && (
+                              <svg width="8" height="8" viewBox="0 0 8 8" style={{ display: 'block' }}>
+                                <polygon points="4,0 8,8 0,8" fill={statusOptions[task.status as keyof typeof statusOptions]?.hex || '#888'} />
+                              </svg>
+                            )}
+                          </span>
                           <div
                             className="text-gray-900 font-bold text-xs leading-tight truncate"
                             style={{
@@ -856,31 +882,51 @@ export default function UnoCalendar() {
                           >
                             <PopoverTrigger asChild>
                               <span
-                                className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold ${statusOptions[task.status as keyof typeof statusOptions]?.color || 'bg-gray-400'} text-white`}
-                                style={{ fontFamily: 'Montserrat, sans-serif', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 90 }}
+                                className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold text-white"
+                                style={{ 
+                                  fontFamily: 'Montserrat, sans-serif', 
+                                  whiteSpace: 'nowrap', 
+                                  overflow: 'hidden', 
+                                  textOverflow: 'ellipsis', 
+                                  maxWidth: 90,
+                                  backgroundColor: statusOptions[task.status as keyof typeof statusOptions]?.hex || '#888'
+                                }}
                               >
                                 {task.status}
                               </span>
                             </PopoverTrigger>
-                            <PopoverContent className="w-64 p-2" align="start">
-                              <div className="space-y-1">
-                                {Object.entries(groupedStatuses).map(([category, statuses]) => (
-                                  <div key={category}>
-                                    <div className="px-2 py-1 text-xs font-semibold text-gray-500">{category}</div>
-                                    {statuses.map((status) => (
-                                      <button
-                                        key={status}
-                                        className="w-full text-left px-2 py-1 text-sm hover:bg-gray-100 rounded flex items-center gap-2 cursor-pointer"
-                                        onClick={() => handleQuickStatusChange(task.id, status)}
-                                      >
-                                        <div
-                                          className={`w-3 h-3 rounded-full ${statusOptions[status as keyof typeof statusOptions]?.color}`}
-                                        />
-                                        {status}
-                                      </button>
-                                    ))}
-                                  </div>
-                                ))}
+                            <PopoverContent className="w-96 p-2" align="start">
+                              <div className="flex gap-4">
+                                {Object.entries(groupedStatuses).map((entry) => {
+                                  const [columnName, categories] = entry as [string, { [key: string]: string[] }];
+                                  return (
+                                    <div key={columnName} className="flex-1 space-y-2">
+                                      {Object.entries(categories).map(([category, statuses]) => {
+                                        if (statuses.length === 0) return null;
+                                        return (
+                                          <div key={category}>
+                                            <div className="px-2 py-1 text-xs font-semibold text-gray-500">{category}</div>
+                                            <div className="space-y-1">
+                                              {statuses.map((status: string) => (
+                                                <button
+                                                  key={status}
+                                                  className="w-full text-left px-2 py-1 text-sm hover:bg-gray-100 rounded flex items-center gap-2 cursor-pointer"
+                                                  onClick={() => handleQuickStatusChange(task.id, status)}
+                                                >
+                                                  <div
+                                                    className="w-3 h-3 rounded-full flex-shrink-0"
+                                                    style={{ backgroundColor: statusOptions[status as keyof typeof statusOptions]?.hex || '#888' }}
+                                                  />
+                                                  <span className="truncate">{status}</span>
+                                                </button>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )
+                                      })}
+                                    </div>
+                                  );
+                                })}
                               </div>
                             </PopoverContent>
                           </Popover>
@@ -1005,11 +1051,21 @@ export default function UnoCalendar() {
             </Select> */}
             <Button className="font-semibold px-4 py-2 text-base bg-white text-black text-xs hover:bg-gray-100" onClick={handleRecurringTasksClick}>+ Add weekly</Button>
             <Button className="font-semibold px-4 py-2 bg-blue-600 text-white text-xs border-none hover:bg-blue-700" onClick={handleNewTaskClick}>+</Button>
-            <Link href="/settings">
-              <Button className="font-semibold p-3 bg-blue-600 text-white text-xs border-none hover:bg-blue-700">
-                <Settings className="w-4 h-4" />
-              </Button>
-            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="font-semibold p-3 bg-blue-600 text-white text-xs border-none hover:bg-blue-700">
+                  <Settings className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem>
+                  <Link href="/settings">Manage Statuses</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Link href="/colors">Manage Color</Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -1143,20 +1199,23 @@ export default function UnoCalendar() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="max-h-80">
-                      {Object.entries(groupedStatuses).map(([category, statuses]) => (
-                        <div key={category}>
-                          <div className="px-2 py-1.5 text-sm font-semibold text-gray-500 bg-gray-50">{category}</div>
-                          {statuses.map((status) => (
-                            <SelectItem key={status} value={status}>
-                              <div className="flex items-center gap-2">
-                                <div
-                                  className={`w-3 h-3 rounded-full ${statusOptions[status as keyof typeof statusOptions]?.color}`}
-                                />
-                                {status}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </div>
+                      {Object.entries(selectGroupedStatuses).map(([category, statuses]) => (
+                        statuses.length === 0 ? null : (
+                          <div key={category}>
+                            <div className="px-2 py-1.5 text-sm font-semibold text-gray-500 bg-gray-50">{category}</div>
+                            {statuses.map((status) => (
+                              <SelectItem key={status} value={status}>
+                                <div className="flex items-center gap-2">
+                                  <div
+                                    className="w-3 h-3 rounded-full"
+                                    style={{ backgroundColor: statusOptions[status as keyof typeof statusOptions]?.hex || '#888' }}
+                                  />
+                                  {status}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </div>
+                        )
                       ))}
                     </SelectContent>
                   </Select>

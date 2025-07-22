@@ -13,28 +13,17 @@ import Link from "next/link"
 interface Status {
   id: number;
   name: string;
-  color: string;
+  color: string; // This will be deprecated
   hex: string;
   category: string;
 }
 
 const emptyStatus: Omit<Status, "id"> = {
   name: "",
-  color: "bg-gray-400",
+  color: "bg-gray-400", // Default value, will be removed
   hex: "#9ca3af",
   category: "To-do",
 };
-
-const PREDEFINED_COLORS = [
-    { name: 'Gray', className: 'bg-gray-500', hex: '#6b7280' },
-    { name: 'Red', className: 'bg-red-500', hex: '#ef4444' },
-    { name: 'Amber', className: 'bg-amber-500', hex: '#f59e0b' },
-    { name: 'Green', className: 'bg-green-500', hex: '#22c55e' },
-    { name: 'Blue', className: 'bg-blue-500', hex: '#3b82f6' },
-    { name: 'Indigo', className: 'bg-indigo-500', hex: '#6366f1' },
-    { name: 'Purple', className: 'bg-purple-500', hex: '#8b5cf6' },
-    { name: 'Pink', className: 'bg-pink-500', hex: '#ec4899' },
-];
 
 export default function SettingsPage() {
   const [statuses, setStatuses] = useState<Status[]>([]);
@@ -52,8 +41,6 @@ export default function SettingsPage() {
   }, []);
 
   const groupedStatuses = useMemo(() => {
-    const colorOrderMap = new Map(PREDEFINED_COLORS.map((c, i) => [c.className, i]));
-
     const groups = statuses.reduce((acc, status) => {
       const category = status.category || 'Uncategorized';
       if (!acc[category]) {
@@ -63,15 +50,9 @@ export default function SettingsPage() {
       return acc;
     }, {} as Record<string, Status[]>);
 
+    // Simplified sorting, can be adjusted if needed
     for (const category in groups) {
-      groups[category].sort((a, b) => {
-        const colorIndexA = colorOrderMap.get(a.color) ?? Infinity;
-        const colorIndexB = colorOrderMap.get(b.color) ?? Infinity;
-        if (colorIndexA !== colorIndexB) {
-            return colorIndexA - colorIndexB;
-        }
-        return a.name.localeCompare(b.name);
-      });
+      groups[category].sort((a, b) => a.name.localeCompare(b.name));
     }
 
     return groups;
@@ -85,24 +66,28 @@ export default function SettingsPage() {
     const url = isEditing ? `/api/statuses/${editingStatus.id}` : "/api/statuses";
     const method = isEditing ? "PUT" : "POST";
 
+    // Ensure a hex value exists
+    const payload = { ...editingStatus };
+    if (!payload.hex) {
+      payload.hex = '#000000'; // Default to black if no color is selected
+    }
+
     try {
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editingStatus),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
+        const updatedData = await response.json();
         if (isEditing) {
-          const updatedStatus = await response.json();
-          setStatuses(statuses.map(s => s.id === updatedStatus.status.id ? updatedStatus.status : s));
+          setStatuses(statuses.map(s => s.id === updatedData.status.id ? updatedData.status : s));
         } else {
-          const newStatus = await response.json();
-          setStatuses([...statuses, newStatus.status]);
+          setStatuses([...statuses, updatedData.status]);
         }
         setEditingStatus(null);
       } else {
-        // Handle error
         console.error("Failed to save status");
       }
     } catch (error) {
@@ -136,10 +121,15 @@ export default function SettingsPage() {
             </Link>
             <h1 className="text-3xl font-bold">Manage Statuses</h1>
         </div>
-        <Button onClick={() => setEditingStatus(emptyStatus)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add New Status
-        </Button>
+        <div className="flex items-center gap-2">
+          <Link href="/colors">
+            <Button variant="outline">Manage Colors</Button>
+          </Link>
+          <Button onClick={() => setEditingStatus(emptyStatus)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add New Status
+          </Button>
+        </div>
       </header>
       
       <div className="space-y-8">
@@ -152,7 +142,10 @@ export default function SettingsPage() {
                         {statusesInCategory.map(status => (
                         <div key={status.id} className="flex items-center justify-between p-4 hover:bg-gray-50">
                             <div className="flex items-center gap-4">
-                            <span className={`w-5 h-5 rounded-full ${status.color}`} />
+                            <span 
+                                className="w-5 h-5 rounded-full"
+                                style={{ backgroundColor: status.hex }}
+                            />
                             <div>
                                 <p className="font-semibold">{status.name}</p>
                             </div>
@@ -198,14 +191,14 @@ export default function SettingsPage() {
               </div>
               <div>
                 <Label>Color</Label>
-                <div className="grid grid-cols-8 gap-2 mt-2">
-                    {PREDEFINED_COLORS.map(color => (
-                        <button
-                            key={color.className}
-                            className={`w-8 h-8 rounded-full ${color.className} border-2 ${editingStatus.color === color.className ? 'border-blue-500' : 'border-transparent'}`}
-                            onClick={() => setEditingStatus({ ...editingStatus, color: color.className, hex: color.hex })}
-                        />
-                    ))}
+                <div className="flex items-center gap-2 mt-2">
+                    <div 
+                      className="w-8 h-8 rounded-full border"
+                      style={{ backgroundColor: editingStatus.hex }}
+                    />
+                    <p className="text-sm text-gray-500">
+                      Manage colors in the <Link href="/colors" className="underline text-blue-600">Manage Colors</Link> screen.
+                    </p>
                 </div>
               </div>
             </div>
