@@ -182,7 +182,7 @@ export default function SettingsPage() {
     }
   }
 
-  // New handler to prepare editingStatus with correct color data
+  // Updated handler to prepare editingStatus with correct color data
   const handleEditStatusClick = (statusToEdit: Status) => {
     // Try to find a matching color from availableColors based on hex
     let matchedColor = availableColors.find((color) => color.hex === statusToEdit.hex)
@@ -192,13 +192,16 @@ export default function SettingsPage() {
       matchedColor = availableColors.find((color) => color.tailwind_class === statusToEdit.color)
     }
 
-    // Create a new status object with potentially updated color and hex
+    // Determine the final color to use for editingStatus
+    // Prioritize matchedColor, then fallback to the first available color,
+    // or a hardcoded default if availableColors is unexpectedly empty.
+    const finalColor = matchedColor ||
+      availableColors[0] || { name: "Default", hex: "#9ca3af", tailwind_class: "bg-gray-400" }
+
     const updatedStatus: Status = {
       ...statusToEdit,
-      // Ensure color (tailwind_class) is set from matchedColor if found, otherwise use existing or fallback
-      color: matchedColor?.tailwind_class || statusToEdit.color || emptyStatus.color,
-      // Ensure hex is set from matchedColor if found, otherwise use existing or fallback
-      hex: matchedColor?.hex || statusToEdit.hex || emptyStatus.hex,
+      color: finalColor.tailwind_class,
+      hex: finalColor.hex,
     }
 
     // --- DEBUG LOG: Check updatedStatus after matching logic ---
