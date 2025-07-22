@@ -19,13 +19,14 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, hex } = await request.json()
+    const { name, hex, tailwind_class } = await request.json() // Added tailwind_class
 
-    if (!name || !hex) {
-      return NextResponse.json({ error: "Missing required fields: name, hex" }, { status: 400 })
+    if (!name || !hex || !tailwind_class) {
+      // Validate tailwind_class
+      return NextResponse.json({ error: "Missing required fields: name, hex, tailwind_class" }, { status: 400 })
     }
 
-    const { data: color, error } = await supabase.from("colors").insert({ name, hex }).select().single()
+    const { data: color, error } = await supabase.from("colors").insert({ name, hex, tailwind_class }).select().single() // Insert tailwind_class
 
     if (error) {
       console.error("Supabase error creating color:", error)

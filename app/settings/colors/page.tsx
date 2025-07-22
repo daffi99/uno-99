@@ -15,12 +15,14 @@ interface Color {
   id: string
   name: string
   hex: string
+  tailwind_class: string // Added tailwind_class to interface
   created_at?: string
 }
 
 const emptyColor: Omit<Color, "id" | "created_at"> = {
   name: "",
   hex: "#000000",
+  tailwind_class: "bg-gray-500", // Default tailwind_class
 }
 
 export default function ManageColorsPage() {
@@ -51,10 +53,22 @@ export default function ManageColorsPage() {
   }, [])
 
   const handleSave = async () => {
-    if (!editingColor || !editingColor.name || !editingColor.hex) {
-      alert("Please fill all required fields.")
+    if (!editingColor) return
+
+    // Client-side validation for colors
+    if (!editingColor.name) {
+      alert("Color Name is required.")
       return
     }
+    if (!editingColor.hex) {
+      alert("Hex Code is required.")
+      return
+    }
+    if (!editingColor.tailwind_class) {
+      alert("Tailwind Class is required.")
+      return
+    }
+
     setIsSubmitting(true)
 
     const isEditing = "id" in editingColor && editingColor.id !== undefined
@@ -65,7 +79,11 @@ export default function ManageColorsPage() {
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: editingColor.name, hex: editingColor.hex }),
+        body: JSON.stringify({
+          name: editingColor.name,
+          hex: editingColor.hex,
+          tailwind_class: editingColor.tailwind_class, // Send tailwind_class
+        }),
       })
 
       if (response.ok) {
@@ -141,7 +159,7 @@ export default function ManageColorsPage() {
               colors.map((color) => (
                 <div key={color.id} className="flex items-center justify-between p-4 hover:bg-gray-50">
                   <div className="flex items-center gap-4">
-                    <span className={`w-5 h-5 rounded-full bg-[${color.hex}]`} />
+                    <span className="w-5 h-5 rounded-full" style={{ backgroundColor: color.hex }} />
                     <div>
                       <p className="font-semibold">{color.name}</p>
                       <p className="text-sm text-gray-500">{color.hex}</p>
@@ -197,6 +215,15 @@ export default function ManageColorsPage() {
                   onChange={handleHexChange}
                   placeholder="#RRGGBB"
                   className="mt-2"
+                />
+              </div>
+              <div>
+                <Label htmlFor="color-tailwind-class">Tailwind Class</Label> {/* New input for tailwind_class */}
+                <Input
+                  id="color-tailwind-class"
+                  value={editingColor.tailwind_class}
+                  onChange={(e) => setEditingColor({ ...editingColor, tailwind_class: e.target.value })}
+                  placeholder="e.g., bg-red-500"
                 />
               </div>
             </div>

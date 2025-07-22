@@ -27,8 +27,8 @@ interface Color {
 
 const emptyStatus: Omit<Status, "id"> = {
   name: "",
-  color: "bg-gray-400",
-  hex: "#9ca3af",
+  color: "bg-gray-400", // Default Tailwind class
+  hex: "#9ca3af", // Default Hex code
   category: "To-do",
 }
 
@@ -44,7 +44,13 @@ export default function SettingsPage() {
       const res = await fetch("/api/statuses")
       const data = await res.json()
       if (data.statuses) {
-        setStatuses(data.statuses || [])
+        // Ensure color and hex are always strings, providing fallbacks
+        const processedStatuses: Status[] = data.statuses.map((s: any) => ({
+          ...s,
+          color: s.color || emptyStatus.color, // Fallback for color (tailwind class)
+          hex: s.hex || emptyStatus.hex, // Fallback for hex code
+        }))
+        setStatuses(processedStatuses || [])
       }
     } catch (error) {
       console.error("Failed to fetch statuses:", error)
@@ -100,6 +106,30 @@ export default function SettingsPage() {
 
   const handleSave = async () => {
     if (!editingStatus) return
+
+    // Client-side validation for statuses
+    if (!editingStatus.name) {
+      alert("Status Name is required.")
+      setIsSubmitting(false)
+      return
+    }
+    if (!editingStatus.category) {
+      alert("Category is required.")
+      setIsSubmitting(false)
+      return
+    }
+    // Check if color and hex are valid strings (not null/undefined/empty)
+    if (!editingStatus.color || editingStatus.color.trim() === "") {
+      alert("Status Color (Tailwind Class) is required. Please select a color.")
+      setIsSubmitting(false)
+      return
+    }
+    if (!editingStatus.hex || editingStatus.hex.trim() === "") {
+      alert("Status Color (Hex Code) is required. Please select a color.")
+      setIsSubmitting(false)
+      return
+    }
+
     setIsSubmitting(true)
 
     const isEditing = "id" in editingStatus
@@ -149,6 +179,23 @@ export default function SettingsPage() {
     }
   }
 
+  // New handler to prepare editingStatus with correct color data
+  const handleEditStatusClick = (statusToEdit: Status) => {
+    // Find the corresponding color from availableColors based on the hex code
+    const matchedColor = availableColors.find((color) => color.hex === statusToEdit.hex)
+
+    // Create a new status object with potentially updated color and hex
+    const updatedStatus: Status = {
+      ...statusToEdit,
+      // Ensure color (tailwind_class) is set from matchedColor if found, otherwise use existing or fallback
+      color: matchedColor?.tailwind_class || statusToEdit.color || emptyStatus.color,
+      // Ensure hex is set from matchedColor if found, otherwise use existing or fallback
+      hex: matchedColor?.hex || statusToEdit.hex || emptyStatus.hex,
+    }
+
+    setEditingStatus(updatedStatus)
+  }
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -193,7 +240,7 @@ export default function SettingsPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => setEditingStatus(status)}>
+                        <Button variant="ghost" size="icon" onClick={() => handleEditStatusClick(status)}>
                           <Edit className="w-4 h-4" />
                         </Button>
                         <Button
