@@ -22,6 +22,7 @@ interface Color {
   id: string
   name: string
   hex: string
+  tailwind_class: string
 }
 
 const emptyStatus: Omit<Status, "id"> = {
@@ -247,13 +248,13 @@ export default function SettingsPage() {
               <div>
                 <Label>Color</Label>
                 <Select
-                  value={editingStatus.color}
+                  value={editingStatus.hex} // Use hex as the value for the Select component
                   onValueChange={(value) => {
                     const selectedColor = availableColors.find((c) => c.hex === value)
                     if (selectedColor) {
                       setEditingStatus({
                         ...editingStatus,
-                        color: `bg-[${selectedColor.hex}]`, // derive class for runtime use
+                        color: selectedColor.tailwind_class, // Store the actual Tailwind class
                         hex: selectedColor.hex,
                       })
                     }

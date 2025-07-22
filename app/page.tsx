@@ -766,6 +766,8 @@ export default function UnoCalendar() {
                     top: `${taskPos.top}px`,
                     height: `${taskPos.height * 0.6}px`,
                     border: "none",
+                    zIndex: 1, // Ensure it has a base stacking context
+                    transform: "translateZ(0)", // Force a new rendering layer
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -1043,7 +1045,7 @@ export default function UnoCalendar() {
     <div className="min-h-screen" style={{ background: "#f7f6ed" }}>
       <div
         className="max-w-8xl
-  "
+"
       >
         <div className="flex items-center justify-between mb-7 px-2">
           <div className="flex items-center gap-2">
@@ -1073,11 +1075,11 @@ export default function UnoCalendar() {
               Next Week &gt;
             </Button>
             {/* <Select>
-          <SelectTrigger className="font-semibold px-4 w-26 text-xs text-black hover:bg-gray-100">Choose</SelectTrigger>
-          <SelectContent>
-            <SelectItem value="weekly">Weekly</SelectItem>
-          </SelectContent>
-        </Select> */}
+        <SelectTrigger className="font-semibold px-4 w-26 text-xs text-black hover:bg-gray-100">Choose</SelectTrigger>
+        <SelectContent>
+          <SelectItem value="weekly">Weekly</SelectItem>
+        </SelectContent>
+      </Select> */}
             <Button
               className="font-semibold px-4 py-2 text-base bg-white text-black text-xs hover:bg-gray-100"
               onClick={handleRecurringTasksClick}
