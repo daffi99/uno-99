@@ -194,4 +194,4 @@ export default function ColorsPage() {
       </Dialog>
     </div>
   )
-} 
+}

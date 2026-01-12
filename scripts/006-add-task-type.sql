@@ -1,2 +1,2 @@
 ALTER TABLE tasks
-ADD COLUMN type VARCHAR NOT NULL DEFAULT 'descriptive'; 
+ADD COLUMN type VARCHAR NOT NULL DEFAULT 'descriptive';

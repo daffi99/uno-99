@@ -27,4 +27,4 @@ INSERT INTO statuses (name, color, hex, category) VALUES
   ('Series Customer Review', 'bg-amber-500', '#f59e42', 'In progress'),
   ('Continue next day', 'bg-blue-500', '#3b82f6', 'In progress'),
   ('Done', 'bg-green-500', '#22c55e', 'Completed'),
-  ('Meeting', 'bg-purple-500', '#a78bfa', 'Completed'); 
+  ('Meeting', 'bg-purple-500', '#a78bfa', 'Completed');
