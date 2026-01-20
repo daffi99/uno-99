@@ -12,7 +12,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Edit2, Trash2, Repeat, Loader2, Calendar, Settings } from "lucide-react"
 import Link from "next/link"
-// CHANGE: Import the new DatePicker component
 import { DatePicker } from "@/components/date-picker"
 
 interface Task {
@@ -913,9 +912,7 @@ export default function UnoCalendar() {
                                       if (statuses.length === 0) return null
                                       return (
                                         <div key={category}>
-                                          <div className="px-2 py-1 text-xs font-semibold text-gray-500">
-                                            {category}
-                                          </div>
+                                          <div className="px-2 py-1.5 text-sm font-semibold text-gray-500 bg-gray-50">{category}</div>
                                           <div className="space-y-1">
                                             {statuses.map((status: string) => (
                                               <button
@@ -1220,26 +1217,25 @@ export default function UnoCalendar() {
                 </div>
               )}
 
-              {/* CHANGE: Replace native date inputs with DatePicker */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="startDate">Start Date</Label>
-                  <DatePicker
-                    value={newTask.start_date}
-                    onChange={(date) => setNewTask({ ...newTask, start_date: date })}
-                    placeholder="Select start date"
-                  />
-                </div>
+<div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Start Date</Label>
+              <DatePicker
+                value={newTask.start_date}
+                onChange={(date) => setNewTask({ ...newTask, start_date: date })}
+                placeholder="Select start date"
+              />
+            </div>
 
-                <div>
-                  <Label htmlFor="endDate">End Date</Label>
-                  <DatePicker
-                    value={newTask.end_date}
-                    onChange={(date) => setNewTask({ ...newTask, end_date: date })}
-                    placeholder="Select end date"
-                  />
-                </div>
-              </div>
+            <div>
+              <Label>End Date</Label>
+              <DatePicker
+                value={newTask.end_date}
+                onChange={(date) => setNewTask({ ...newTask, end_date: date })}
+                placeholder="Select end date"
+              />
+            </div>
+          </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
