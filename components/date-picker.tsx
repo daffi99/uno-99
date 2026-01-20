@@ -1,5 +1,5 @@
 "use client"
-import { format } from "date-fns"
+import { format, parse } from "date-fns"
 import { CalendarIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -15,7 +15,23 @@ interface DatePickerProps {
 }
 
 export function DatePicker({ value, onChange, placeholder = "Pick a date", disabled = false }: DatePickerProps) {
-  const selectedDate = value ? new Date(value + "T00:00:00") : undefined
+  // Parse date safely - handle YYYY-MM-DD format
+  const selectedDate = value
+    ? (() => {
+        try {
+          const parts = value.split("-")
+          if (parts.length === 3) {
+            const year = parseInt(parts[0], 10)
+            const month = parseInt(parts[1], 10) - 1 // months are 0-indexed
+            const day = parseInt(parts[2], 10)
+            return new Date(year, month, day)
+          }
+          return undefined
+        } catch {
+          return undefined
+        }
+      })()
+    : undefined
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date && onChange) {
@@ -24,6 +40,23 @@ export function DatePicker({ value, onChange, placeholder = "Pick a date", disab
       onChange(isoString)
     }
   }
+
+  const displayDate = value
+    ? (() => {
+        try {
+          const parts = value.split("-")
+          if (parts.length === 3) {
+            const year = parseInt(parts[0], 10)
+            const month = parseInt(parts[1], 10) - 1
+            const day = parseInt(parts[2], 10)
+            return format(new Date(year, month, day), "MMM dd, yyyy")
+          }
+          return placeholder
+        } catch {
+          return placeholder
+        }
+      })()
+    : placeholder
 
   return (
     <Popover>
@@ -34,7 +67,7 @@ export function DatePicker({ value, onChange, placeholder = "Pick a date", disab
           disabled={disabled}
         >
           <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
-          {value ? <span>{format(new Date(value + "T00:00:00"), "MMM dd, yyyy")}</span> : <span>{placeholder}</span>}
+          <span>{displayDate}</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
@@ -42,7 +75,6 @@ export function DatePicker({ value, onChange, placeholder = "Pick a date", disab
           mode="single"
           selected={selectedDate}
           onSelect={handleDateSelect}
-          disabled={(date) => date > new Date()}
           initialFocus
         />
       </PopoverContent>
