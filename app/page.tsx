@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Input } from "@/components/ui/input"
@@ -1143,6 +1143,9 @@ export default function UnoCalendar() {
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>{editingTask ? "Edit Task" : "Create New Task"}</DialogTitle>
+              <DialogDescription>
+                {editingTask ? "Update task details and save changes" : "Create a new task with title, dates, and other details"}
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>
@@ -1387,10 +1390,13 @@ export default function UnoCalendar() {
           </DialogContent>
         </Dialog>
 
-        <Dialog open={isRecurringModalOpen} onOpenChange={setIsRecurringModalOpen}>
-          <DialogContent className="sm:max-w-4xl">
-            <DialogHeader>
-              <DialogTitle>Add {recurringType === "daily" ? "Daily" : "Weekly"} Recurring Tasks</DialogTitle>
+  <Dialog open={isRecurringModalOpen} onOpenChange={setIsRecurringModalOpen}>
+  <DialogContent className="sm:max-w-4xl">
+  <DialogHeader>
+  <DialogTitle>Add {recurringType === "daily" ? "Daily" : "Weekly"} Recurring Tasks</DialogTitle>
+  <DialogDescription>
+  Select tasks to add to your calendar for this week
+  </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <p className="text-sm text-gray-600">
