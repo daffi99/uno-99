@@ -1,6 +1,5 @@
 "use client"
 
-import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -12,17 +11,30 @@ interface DatePickerProps {
   placeholder?: string
 }
 
+const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+function formatDateDisplay(dateString: string): string {
+  try {
+    const [year, month, day] = dateString.split("-").map(Number)
+    if (year && month && day) {
+      return `${monthNames[month - 1]} ${day}, ${year}`
+    }
+  } catch {
+    return ""
+  }
+  return ""
+}
+
 export function DatePicker({ value, onChange, placeholder = "Pick a date" }: DatePickerProps) {
-  // Safe date parsing for YYYY-MM-DD format
-  const getDate = () => {
+  const getDate = (): Date | undefined => {
     if (!value) return undefined
     try {
       const [year, month, day] = value.split("-").map(Number)
       if (year && month && day) {
         return new Date(year, month - 1, day)
       }
-    } catch (e) {
-      console.log("[v0] Date parsing error:", e)
+    } catch {
+      return undefined
     }
     return undefined
   }
@@ -38,7 +50,7 @@ export function DatePicker({ value, onChange, placeholder = "Pick a date" }: Dat
     }
   }
 
-  const displayDate = value ? format(new Date(value + "T00:00:00Z"), "MMM dd, yyyy") : placeholder
+  const displayDate = value ? formatDateDisplay(value) : placeholder
 
   return (
     <Popover>
