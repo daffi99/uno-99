@@ -88,12 +88,9 @@ export function DatePicker({ value, onChange, placeholder = "Pick a date", posit
       {isOpen && (
         <div 
           ref={calendarRef}
-          className={`absolute mt-2 bg-background border border-border rounded-lg shadow-lg p-4 w-80 z-50 ${
-            position === "right" ? "right-0" : "left-0"
+          className={`absolute top-0 bg-background border border-border rounded-lg shadow-lg p-4 w-80 z-50 ${
+            position === "right" ? "left-full ml-2" : "right-full mr-2"
           }`}
-          style={{
-            top: "calc(100% + 8px)"
-          }}
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
