@@ -7,16 +7,18 @@ interface DatePickerProps {
   value?: string
   onChange?: (date: string) => void
   placeholder?: string
+  position?: "left" | "right"
 }
 
 const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 const dayNames = ["S", "M", "T", "W", "T", "F", "S"]
 
-export function DatePicker({ value, onChange, placeholder = "Pick a date" }: DatePickerProps) {
+export function DatePicker({ value, onChange, placeholder = "Pick a date", position = "left" }: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth())
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear())
   const containerRef = useRef<HTMLDivElement>(null)
+  const calendarRef = useRef<HTMLDivElement>(null)
 
   const selectedDate = value ? new Date(value + "T00:00:00") : null
   const displayDate = value ? new Date(value + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }) : placeholder
@@ -84,7 +86,15 @@ export function DatePicker({ value, onChange, placeholder = "Pick a date" }: Dat
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 bg-background border border-border rounded-lg shadow-lg p-4 w-80 z-50">
+        <div 
+          ref={calendarRef}
+          className={`absolute mt-2 bg-background border border-border rounded-lg shadow-lg p-4 w-80 z-50 ${
+            position === "right" ? "right-0" : "left-0"
+          }`}
+          style={{
+            top: "calc(100% + 8px)"
+          }}
+        >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <select

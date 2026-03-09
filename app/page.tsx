@@ -1227,6 +1227,7 @@ export default function UnoCalendar() {
                 value={newTask.start_date}
                 onChange={(date) => setNewTask({ ...newTask, start_date: date })}
                 placeholder="Select start date"
+                position="left"
               />
             </div>
 
@@ -1236,6 +1237,7 @@ export default function UnoCalendar() {
                 value={newTask.end_date}
                 onChange={(date) => setNewTask({ ...newTask, end_date: date })}
                 placeholder="Select end date"
+                position="right"
               />
             </div>
           </div>
