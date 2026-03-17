@@ -241,6 +241,22 @@ export default function UnoCalendar() {
     debounceTimeouts.current.set(taskId, timeout)
   }
 
+  // Reset "Continue Next Day" tasks daily
+  const resetContinueNextDayTasks = async () => {
+    try {
+      const response = await fetch("/api/tasks/reset-continue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        console.log("[v0] Continue Next Day tasks reset:", data)
+      }
+    } catch (error) {
+      console.error("[v0] Error resetting Continue Next Day tasks:", error)
+    }
+  }
+
   // Fetch tasks from API
   const fetchTasks = async () => {
     try {
@@ -262,6 +278,8 @@ export default function UnoCalendar() {
   // Load tasks on component mount and when week changes
   useEffect(() => {
     if (statusesLoaded) {
+      // Reset "Continue Next Day" tasks on app load (daily check)
+      resetContinueNextDayTasks()
       fetchTasks()
     }
   }, [currentWeekDate, statusesLoaded])
