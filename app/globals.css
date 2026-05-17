@@ -53,17 +53,27 @@ html.dark body {
 }
 
 .card {
-  background: #fff;
+  background: var(--card-bg);
   border-radius: 16px;
   box-shadow: 0 2px 12px rgba(0,0,0,0.06);
   padding: 1rem;
   margin-bottom: 1rem;
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+html.dark .card {
+  background: var(--card-bg);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  border: 1px solid var(--border-color);
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Montserrat', sans-serif;
   font-weight: 700;
   margin: 0;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
 }
 
 @layer utilities {
@@ -146,11 +156,40 @@ h1, h2, h3, h4, h5, h6 {
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border transition-colors duration-300;
   }
   body {
     @apply bg-background text-foreground;
   }
+  html.dark {
+    color-scheme: dark;
+  }
+  html:not(.dark) {
+    color-scheme: light;
+  }
+}
+
+/* Ensure all input and button elements inherit dark mode styles */
+input, textarea, select {
+  background-color: var(--card-bg);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--text-primary, #999);
+  opacity: 0.6;
+}
+
+button {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+html.dark input, html.dark textarea, html.dark select {
+  background-color: var(--card-bg);
+  color: var(--text-primary);
+  border-color: var(--border-color);
 }
 
 /* Remove blue highlight/outline on drag-over and focus for all elements */
