@@ -26,7 +26,7 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.png" />
       </head>
       <body className={montserrat.className} style={{ transition: "background-color 0.3s ease" }}>
-        <div className="relative h-full p-2 pb-2 cursor-move rounded-sm text-secondary bg-secondary"
+        <div className="relative h-full p-2 pb-2 cursor-move rounded-sm text-primary bg-input"
           style={{
             minHeight: "100vh",
             background: "var(--bg-primary, #f7f6ed)",

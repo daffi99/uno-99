@@ -782,7 +782,7 @@ export default function UnoCalendar() {
           {weekDays.map((day, index) => (
             <div key={index} className="p-2 text-center">
               <div className="text-sm font-medium text-secondary-foreground">{formatDayName(day)}</div>
-              <div className="text-lg font-bold text-gray-900">{formatDisplayDate(day)}</div>
+              <div className="text-lg font-bold text-secondary-foreground">{formatDisplayDate(day)}</div>
             </div>
           ))}
         </div>
@@ -844,7 +844,7 @@ export default function UnoCalendar() {
                   />
                   {/* Card content with padding */}
                   <div
-                    className="relative h-full p-2 pb-2 cursor-move rounded-sm text-secondary bg-secondary"
+                    className="relative h-full p-2 pb-2 cursor-move rounded-sm text-primary bg-[rgba(53,53,53,1)]"
                     draggable
                     onDragStart={() => handleDragStart(task)}
                   >
@@ -907,7 +907,7 @@ export default function UnoCalendar() {
                         >
                           <PopoverTrigger asChild>
                             <span
-                              className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold text-white"
+                              className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold text-white leading-3"
                               style={{
                                 fontFamily: "Montserrat, sans-serif",
                                 whiteSpace: "nowrap",
