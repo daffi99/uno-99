@@ -777,7 +777,7 @@ export default function UnoCalendar() {
     const maxTop = Math.max(...taskPositions.map((pos) => pos.top + pos.height), 200)
 
     return (
-      <div className="border-x border-b border-border bg-background rounded-lg overflow-hidden dark:bg-slate-900">
+      <div className="border-x border-b border-border bg-background rounded-lg overflow-hidden dark:bg-stone-800">
         <div className="grid grid-cols-7 divide-x divide-border">
           {weekDays.map((day, index) => (
             <div key={index} className="p-2 text-center">
@@ -815,7 +815,7 @@ export default function UnoCalendar() {
               return (
                 <div
                   key={task.id}
-                  className={`absolute bg-background dark:bg-slate-900 rounded-lg shadow-md hover:shadow-lg transition-shadow group group/card pointer-events-auto ${isUpdating ? "opacity-75" : ""}`}
+                  className={`absolute bg-background dark:bg-stone-800 rounded-lg shadow-md hover:shadow-lg transition-shadow group group/card pointer-events-auto ${isUpdating ? "opacity-75" : ""}`}
                   style={{
                     left: position.left,
                     width: position.width,
@@ -1076,19 +1076,19 @@ export default function UnoCalendar() {
           <div className="flex items-center gap-3">
             <Button
               onClick={() => navigateWeek("up")}
-              className="font-semibold px-3 py-1 text-xs text-foreground bg-transparent hover:bg-muted dark:hover:bg-slate-700"
+              className="font-semibold px-3 py-1 text-xs text-foreground bg-transparent hover:bg-muted dark:hover:bg-stone-700"
             >
               &lt; Previous Week
             </Button>
             <Button
               onClick={() => setCurrentWeekDate(new Date())}
-              className="font-semibold rounded-sm px-2 py-1 text-xs bg-background text-foreground hover:bg-muted dark:bg-slate-800 dark:hover:bg-slate-700 border border-border"
+              className="font-semibold rounded-sm px-2 py-1 text-xs bg-background text-foreground hover:bg-muted dark:bg-stone-800 dark:hover:bg-stone-700 border border-border"
             >
               Today
             </Button>
             <Button
               onClick={() => navigateWeek("down")}
-              className="font-semibold rounded-sm px-3 py-1 text-xs text-foreground bg-transparent hover:bg-muted dark:hover:bg-slate-700"
+              className="font-semibold rounded-sm px-3 py-1 text-xs text-foreground bg-transparent hover:bg-muted dark:hover:bg-stone-700"
             >
               Next Week &gt;
             </Button>
@@ -1099,7 +1099,7 @@ export default function UnoCalendar() {
               </SelectContent>
             </Select> */}
             <Button
-              className="font-semibold px-4 py-2 text-base bg-background text-foreground text-xs hover:bg-muted dark:bg-slate-800 dark:hover:bg-slate-700 border border-border"
+              className="font-semibold px-4 py-2 text-base bg-background text-foreground text-xs hover:bg-muted dark:bg-stone-800 dark:hover:bg-stone-700 border border-border"
               onClick={handleRecurringTasksClick}
             >
               + Add weekly
@@ -1133,7 +1133,7 @@ export default function UnoCalendar() {
 
         <div className="space-y-4">
           <Card
-            className="bg-background dark:bg-slate-900 shadow-sm border-0 rounded-xl overflow-hidden max-w-7xl mx-auto"
+            className="bg-background dark:bg-stone-800 shadow-sm border-0 rounded-xl overflow-hidden max-w-7xl mx-auto"
             style={{ paddingLeft: "5%", paddingRight: "5%", paddingTop: 12, marginBottom: 2 }}
           >
             <div className="text-center mb-4 px-2">
@@ -1146,7 +1146,7 @@ export default function UnoCalendar() {
           </Card>
 
           <Card
-            className="bg-background dark:bg-slate-900 shadow-sm border-0 rounded-xl overflow-hidden max-w-7xl mx-auto mt-8"
+            className="bg-background dark:bg-stone-800 shadow-sm border-0 rounded-xl overflow-hidden max-w-7xl mx-auto mt-8"
             style={{ paddingLeft: "5%", paddingRight: "5%", paddingTop: 12, marginBottom: 2 }}
           >
             <div className="text-center mb-4 px-2">
@@ -1431,7 +1431,7 @@ export default function UnoCalendar() {
                 {recurringTasksToAdd.map((task, index) => (
                   <div
                     key={`${task.id}-${index}`}
-                    className="flex flex-col items-start gap-1 px-2 py-2 bg-background dark:bg-slate-800 border border-border rounded text-xs font-medium hover:bg-muted dark:hover:bg-slate-700 transition"
+                    className="flex flex-col items-start gap-1 px-2 py-2 bg-background dark:bg-stone-800 border border-border rounded text-xs font-medium hover:bg-muted dark:hover:bg-stone-700 transition"
                   >
                     <div className="flex items-center gap-1 w-full">
                       <Repeat className="w-3 h-3 text-blue-500 flex-shrink-0" />
