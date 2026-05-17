@@ -1060,7 +1060,7 @@ export default function UnoCalendar() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: "#f7f6ed" }}>
+    <div className="min-h-screen" style={{ background: "var(--bg-primary)" }}>
       <div
         className="max-w-8xl
       "
@@ -1076,13 +1076,13 @@ export default function UnoCalendar() {
           <div className="flex items-center gap-3">
             <Button
               onClick={() => navigateWeek("up")}
-              className="font-semibold px-3 py-1 text-xs text-black bg-transparent hover:bg-gray-100"
+              className="font-semibold px-3 py-1 text-xs text-foreground bg-transparent hover:bg-muted dark:hover:bg-slate-700"
             >
               &lt; Previous Week
             </Button>
             <Button
               onClick={() => setCurrentWeekDate(new Date())}
-              className="font-semibold rounded-sm px-2 py-1 text-xs bg-white text-black hover:bg-gray-100"
+              className="font-semibold rounded-sm px-2 py-1 text-xs bg-background text-foreground hover:bg-muted dark:bg-slate-800 dark:hover:bg-slate-700 border border-border"
             >
               Today
             </Button>
@@ -1099,7 +1099,7 @@ export default function UnoCalendar() {
               </SelectContent>
             </Select> */}
             <Button
-              className="font-semibold px-4 py-2 text-base bg-white text-black text-xs hover:bg-gray-100"
+              className="font-semibold px-4 py-2 text-base bg-background text-foreground text-xs hover:bg-muted dark:bg-slate-800 dark:hover:bg-slate-700 border border-border"
               onClick={handleRecurringTasksClick}
             >
               + Add weekly
