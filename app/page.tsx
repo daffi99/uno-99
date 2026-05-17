@@ -781,7 +781,7 @@ export default function UnoCalendar() {
         <div className="grid grid-cols-7 divide-x divide-border">
           {weekDays.map((day, index) => (
             <div key={index} className="p-2 text-center">
-              <div className="text-sm font-medium text-gray-500">{formatDayName(day)}</div>
+              <div className="text-sm font-medium text-secondary-foreground">{formatDayName(day)}</div>
               <div className="text-lg font-bold text-gray-900">{formatDisplayDate(day)}</div>
             </div>
           ))}
@@ -844,7 +844,7 @@ export default function UnoCalendar() {
                   />
                   {/* Card content with padding */}
                   <div
-                    className="relative h-full p-2 pb-2 cursor-move"
+                    className="relative h-full p-2 pb-2 cursor-move rounded-sm text-secondary bg-secondary"
                     draggable
                     onDragStart={() => handleDragStart(task)}
                   >
@@ -882,7 +882,7 @@ export default function UnoCalendar() {
                           )}
                         </span>
                         <div
-                          className="text-gray-900 font-bold text-xs leading-tight truncate"
+                          className="font-bold text-xs leading-tight truncate text-foreground"
                           style={{
                             whiteSpace: "nowrap",
                             overflow: "hidden",
