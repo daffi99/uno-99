@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Edit2, Trash2, Repeat, Loader2, Calendar, Settings } from "lucide-react"
 import Link from "next/link"
 import { DatePicker } from "@/components/date-picker"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 interface Task {
   id: string
@@ -1072,7 +1073,7 @@ export default function UnoCalendar() {
               style={{ height: "42px", objectFit: "contain", aspectRatio: "auto" }}
             />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Button
               onClick={() => navigateWeek("up")}
               className="font-semibold px-3 py-1 text-xs text-black bg-transparent hover:bg-gray-100"
@@ -1103,6 +1104,7 @@ export default function UnoCalendar() {
             >
               + Add weekly
             </Button>
+            <ThemeToggle />
             {/* START UPDATE */}
             {/* END UPDATE */}
             <Button
