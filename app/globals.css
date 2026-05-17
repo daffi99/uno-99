@@ -12,10 +12,10 @@
 }
 
 html.dark {
-  --bg-primary: #0f0f0f;
+  --bg-primary: #1a1a1a;
   --text-primary: #f5f5f5;
-  --card-bg: #1a1a1a;
-  --border-color: #333;
+  --card-bg: #242424;
+  --border-color: #3a3a3a;
 }
 
 body {
