@@ -777,8 +777,8 @@ export default function UnoCalendar() {
     const maxTop = Math.max(...taskPositions.map((pos) => pos.top + pos.height), 200)
 
     return (
-      <div className="border-x border-b border-gray-200 bg-white rounded-lg overflow-hidden">
-        <div className="grid grid-cols-7 divide-x divide-gray-200">
+      <div className="border-x border-b border-border bg-background rounded-lg overflow-hidden dark:bg-slate-900">
+        <div className="grid grid-cols-7 divide-x divide-border">
           {weekDays.map((day, index) => (
             <div key={index} className="p-2 text-center">
               <div className="text-sm font-medium text-gray-500">{formatDayName(day)}</div>
@@ -792,7 +792,7 @@ export default function UnoCalendar() {
           className="relative h-full"
           style={{ minHeight: `${maxTop}px` }}
         >
-          <div className="absolute inset-0 grid grid-cols-7 divide-x divide-gray-200">
+          <div className="absolute inset-0 grid grid-cols-7 divide-x divide-border">
             {weekDays.map((day) => (
               <div
                 key={formatDate(day)}
@@ -815,7 +815,7 @@ export default function UnoCalendar() {
               return (
                 <div
                   key={task.id}
-                  className={`absolute bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow group group/card pointer-events-auto ${isUpdating ? "opacity-75" : ""}`}
+                  className={`absolute bg-background dark:bg-slate-900 rounded-lg shadow-md hover:shadow-lg transition-shadow group group/card pointer-events-auto ${isUpdating ? "opacity-75" : ""}`}
                   style={{
                     left: position.left,
                     width: position.width,
@@ -1133,12 +1133,12 @@ export default function UnoCalendar() {
 
         <div className="space-y-4">
           <Card
-            className="bg-white shadow-sm border-0 rounded-xl overflow-hidden max-w-7xl mx-auto"
+            className="bg-background dark:bg-slate-900 shadow-sm border-0 rounded-xl overflow-hidden max-w-7xl mx-auto"
             style={{ paddingLeft: "5%", paddingRight: "5%", paddingTop: 12, marginBottom: 2 }}
           >
             <div className="text-center mb-4 px-2">
-              <h2 className="text-xl font-bold text-gray-800">{formatWeekRange(currentWeek)}</h2>
-              <p className="text-sm text-gray-500">
+              <h2 className="text-xl font-bold text-foreground">{formatWeekRange(currentWeek)}</h2>
+              <p className="text-sm text-muted-foreground">
                 {currentWeekRecurringCount} recurring task{currentWeekRecurringCount !== 1 ? "s" : ""}
               </p>
             </div>
@@ -1146,12 +1146,12 @@ export default function UnoCalendar() {
           </Card>
 
           <Card
-            className="bg-white shadow-sm border-0 rounded-xl overflow-hidden max-w-7xl mx-auto mt-8"
+            className="bg-background dark:bg-slate-900 shadow-sm border-0 rounded-xl overflow-hidden max-w-7xl mx-auto mt-8"
             style={{ paddingLeft: "5%", paddingRight: "5%", paddingTop: 12, marginBottom: 2 }}
           >
             <div className="text-center mb-4 px-2">
-              <h2 className="text-xl font-bold text-gray-800">{formatWeekRange(nextWeek)}</h2>
-              <p className="text-sm text-gray-500">
+              <h2 className="text-xl font-bold text-foreground">{formatWeekRange(nextWeek)}</h2>
+              <p className="text-sm text-muted-foreground">
                 {nextWeekRecurringCount} recurring task{nextWeekRecurringCount !== 1 ? "s" : ""}
               </p>
             </div>
@@ -1431,7 +1431,7 @@ export default function UnoCalendar() {
                 {recurringTasksToAdd.map((task, index) => (
                   <div
                     key={`${task.id}-${index}`}
-                    className="flex flex-col items-start gap-1 px-2 py-2 bg-white border border-gray-300 rounded text-xs font-medium hover:bg-blue-50 transition"
+                    className="flex flex-col items-start gap-1 px-2 py-2 bg-background dark:bg-slate-800 border border-border rounded text-xs font-medium hover:bg-muted dark:hover:bg-slate-700 transition"
                   >
                     <div className="flex items-center gap-1 w-full">
                       <Repeat className="w-3 h-3 text-blue-500 flex-shrink-0" />
