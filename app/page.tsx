@@ -1088,7 +1088,7 @@ export default function UnoCalendar() {
             </Button>
             <Button
               onClick={() => navigateWeek("down")}
-              className="font-semibold rounded-sm px-3 py-1 text-xs text-black bg-transparent hover:bg-gray-100"
+              className="font-semibold rounded-sm px-3 py-1 text-xs text-foreground bg-transparent hover:bg-muted dark:hover:bg-slate-700"
             >
               Next Week &gt;
             </Button>
@@ -1137,8 +1137,8 @@ export default function UnoCalendar() {
             style={{ paddingLeft: "5%", paddingRight: "5%", paddingTop: 12, marginBottom: 2 }}
           >
             <div className="text-center mb-4 px-2">
-              <h2 className="text-xl font-bold text-foreground">{formatWeekRange(currentWeek)}</h2>
-              <p className="text-sm text-muted-foreground">
+              <h2 className="text-xl font-bold text-white dark:text-white">{formatWeekRange(currentWeek)}</h2>
+              <p className="text-sm text-white dark:text-gray-300">
                 {currentWeekRecurringCount} recurring task{currentWeekRecurringCount !== 1 ? "s" : ""}
               </p>
             </div>
@@ -1150,8 +1150,8 @@ export default function UnoCalendar() {
             style={{ paddingLeft: "5%", paddingRight: "5%", paddingTop: 12, marginBottom: 2 }}
           >
             <div className="text-center mb-4 px-2">
-              <h2 className="text-xl font-bold text-foreground">{formatWeekRange(nextWeek)}</h2>
-              <p className="text-sm text-muted-foreground">
+              <h2 className="text-xl font-bold text-white dark:text-white">{formatWeekRange(nextWeek)}</h2>
+              <p className="text-sm text-white dark:text-gray-300">
                 {nextWeekRecurringCount} recurring task{nextWeekRecurringCount !== 1 ? "s" : ""}
               </p>
             </div>
