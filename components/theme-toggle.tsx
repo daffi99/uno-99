@@ -1,62 +1,61 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Moon, Sun } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Moon, Sparkles, Sun } from "lucide-react"
+import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 export function ThemeToggle() {
-  const [isDark, setIsDark] = useState(false)
+  const { resolvedTheme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
-    const savedTheme = localStorage.getItem("theme") || "light"
-    const isDarkMode = savedTheme === "dark"
-    setIsDark(isDarkMode)
-    applyTheme(isDarkMode)
   }, [])
 
-  const applyTheme = (dark: boolean) => {
-    const html = document.documentElement
-    if (dark) {
-      html.classList.add("dark")
-      html.style.backgroundColor = "#0f0f0f"
-      document.body.style.backgroundColor = "#0f0f0f"
-      localStorage.setItem("theme", "dark")
-    } else {
-      html.classList.remove("dark")
-      html.style.backgroundColor = "#f7f6ed"
-      document.body.style.backgroundColor = "#f7f6ed"
-      localStorage.setItem("theme", "light")
-    }
-  }
-
-  const toggleTheme = () => {
-    const newDarkMode = !isDark
-    setIsDark(newDarkMode)
-    applyTheme(newDarkMode)
-  }
-
-  if (!mounted) return null
+  const isDark = mounted && resolvedTheme === "dark"
 
   return (
     <Button
-      onClick={toggleTheme}
-      className="relative w-10 h-10 p-0 rounded-full bg-white hover:bg-gray-100 text-black border border-gray-200 transition-all duration-300 overflow-hidden"
+      type="button"
+      variant="outline"
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      className={cn(
+        "group relative h-10 overflow-hidden rounded-full border px-3 shadow-sm transition-all duration-500 ease-out",
+        "bg-white/85 text-slate-900 hover:-translate-y-0.5 hover:bg-white hover:shadow-lg hover:shadow-amber-200/40",
+        "dark:border-white/10 dark:bg-slate-950/80 dark:text-slate-50 dark:hover:bg-slate-900 dark:hover:shadow-sky-950/60",
+      )}
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      disabled={!mounted}
     >
-      <div className="relative w-full h-full flex items-center justify-center">
-        <Sun
-          className={`absolute h-5 w-5 transition-all duration-300 transform ${
-            isDark ? "scale-0 rotate-90 opacity-0" : "scale-100 rotate-0 opacity-100"
-          }`}
-        />
-        <Moon
-          className={`absolute h-5 w-5 transition-all duration-300 transform ${
-            isDark ? "scale-100 rotate-0 opacity-100" : "scale-0 -rotate-90 opacity-0"
-          }`}
-        />
-      </div>
+      <span
+        className={cn(
+          "absolute inset-y-1 left-1 w-8 rounded-full bg-gradient-to-br from-amber-300 via-orange-300 to-rose-300 shadow-sm transition-transform duration-500 ease-out",
+          isDark && "translate-x-[calc(100%+0.5rem)] from-sky-400 via-indigo-400 to-violet-500",
+        )}
+      />
+      <span className="relative z-10 flex items-center gap-2">
+        <span className="relative grid h-6 w-6 place-items-center">
+          <Sun
+            className={cn(
+              "absolute h-4 w-4 text-amber-900 transition-all duration-500 ease-out",
+              isDark ? "-rotate-90 scale-0 opacity-0" : "rotate-0 scale-100 opacity-100",
+            )}
+          />
+          <Moon
+            className={cn(
+              "absolute h-4 w-4 text-white transition-all duration-500 ease-out",
+              isDark ? "rotate-0 scale-100 opacity-100" : "rotate-90 scale-0 opacity-0",
+            )}
+          />
+        </span>
+        <span className="hidden text-xs font-bold uppercase tracking-[0.18em] sm:inline">
+          {isDark ? "Dark" : "Light"}
+        </span>
+        <Sparkles className="hidden h-3.5 w-3.5 opacity-60 transition-transform duration-500 group-hover:rotate-12 sm:block" />
+      </span>
     </Button>
   )
 }
