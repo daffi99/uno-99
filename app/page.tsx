@@ -844,7 +844,7 @@ export default function UnoCalendar() {
                   />
                   {/* Card content with padding */}
                   <div
-                    className="relative h-full p-2 pb-2 cursor-move rounded-sm text-primary bg-[rgba(53,53,53,1)]"
+                    className="relative h-full p-2 pb-2 cursor-move rounded-sm text-foreground bg-white dark:bg-stone-800"
                     draggable
                     onDragStart={() => handleDragStart(task)}
                   >
