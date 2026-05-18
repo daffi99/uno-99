@@ -1,13 +1,7 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Montserrat } from "next/font/google"
 import "./globals.css"
-
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  weight: ["400", "600", "700"],
-  display: "swap",
-})
+import { ThemeProvider } from "@/components/theme-provider"
 
 export const metadata: Metadata = {
   title: "Uno App",
@@ -25,22 +19,14 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.png" />
       </head>
-      <body className={montserrat.className} style={{ transition: "background-color 0.3s ease" }}>
-        <div className="relative h-full p-2 pb-2 cursor-move rounded-sm text-primary bg-input"
-          style={{
-            minHeight: "100vh",
-            background: "var(--bg-primary, #f7f6ed)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "flex-start",
-            transition: "background-color 0.3s ease",
-          }}
-        >
-          <main style={{ width: "100%", maxWidth: 1200, margin: "auto", padding: "32px 24px", borderRadius: 24 }}>
-            {children}
-          </main>
-        </div>
+      <body>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem storageKey="uno-theme">
+          <div className="min-h-screen w-full bg-[var(--bg-primary)] text-foreground transition-[background,color] duration-500 ease-out">
+            <main className="mx-auto w-full max-w-[1200px] px-4 py-6 sm:px-6 lg:px-8">
+              {children}
+            </main>
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   )
