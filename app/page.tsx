@@ -777,7 +777,7 @@ export default function UnoCalendar() {
     const maxTop = Math.max(...taskPositions.map((pos) => pos.top + pos.height), 200)
 
     return (
-      <div className="border-x border-b border-border bg-white rounded-lg overflow-hidden dark:bg-stone-800">
+      <div className="border-x border-b border-border bg-gray-800 rounded-lg overflow-hidden dark:bg-stone-800">
         <div className="grid grid-cols-7 divide-x divide-border">
           {weekDays.map((day, index) => (
             <div key={index} className="p-2 text-center">
@@ -815,7 +815,7 @@ export default function UnoCalendar() {
               return (
                 <div
                   key={task.id}
-                  className={`absolute bg-white dark:bg-stone-800 rounded-lg shadow-md hover:shadow-lg transition-shadow group group/card pointer-events-auto ${isUpdating ? "opacity-75" : ""}`}
+                  className={`absolute bg-gray-800 dark:bg-stone-800 rounded-lg shadow-md hover:shadow-lg transition-shadow group group/card pointer-events-auto ${isUpdating ? "opacity-75" : ""}`}
                   style={{
                     left: position.left,
                     width: position.width,
@@ -844,7 +844,7 @@ export default function UnoCalendar() {
                   />
                   {/* Card content with padding */}
                   <div
-                    className="relative h-full p-2 pb-2 cursor-move rounded-sm text-foreground bg-white dark:bg-stone-800"
+                    className="relative h-full p-2 pb-2 cursor-move rounded-sm text-foreground bg-gray-800 dark:bg-stone-800"
                     draggable
                     onDragStart={() => handleDragStart(task)}
                   >
@@ -1133,7 +1133,7 @@ export default function UnoCalendar() {
 
         <div className="space-y-4">
           <Card
-            className="bg-white dark:bg-stone-800 shadow-sm border-0 rounded-xl overflow-hidden max-w-7xl mx-auto"
+            className="bg-gray-800 dark:bg-stone-800 shadow-sm border-0 rounded-xl overflow-hidden max-w-7xl mx-auto"
             style={{ paddingLeft: "5%", paddingRight: "5%", paddingTop: 12, marginBottom: 2 }}
           >
             <div className="text-center mb-4 px-2">
@@ -1431,7 +1431,7 @@ export default function UnoCalendar() {
                 {recurringTasksToAdd.map((task, index) => (
                   <div
                     key={`${task.id}-${index}`}
-                    className="flex flex-col items-start gap-1 px-2 py-2 bg-white dark:bg-stone-800 border border-border rounded text-xs font-medium hover:bg-gray-50 dark:hover:bg-stone-700 transition"
+                    className="flex flex-col items-start gap-1 px-2 py-2 bg-gray-800 dark:bg-stone-800 border border-border rounded text-xs font-medium hover:bg-gray-50 dark:hover:bg-stone-700 transition"
                   >
                     <div className="flex items-center gap-1 w-full">
                       <Repeat className="w-3 h-3 text-blue-500 flex-shrink-0" />
