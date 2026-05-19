@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import Link from "next/link"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
@@ -101,11 +102,11 @@ export default function ColorsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
+    <div className="min-h-screen">
+      <header className="bg-white shadow-sm dark:bg-slate-900">
         <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-gray-900">Manage Colors</h1>
+            <h1 className="text-2xl font-bold text-foreground">Manage Colors</h1>
             <Link href="/" passHref>
               <Button variant="outline">Calendar</Button>
             </Link>
@@ -113,10 +114,13 @@ export default function ColorsPage() {
               <Button variant="outline">Manage Statuses</Button>
             </Link>
           </div>
-          <Button onClick={() => setEditingStatus(emptyStatus)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add New Color
-          </Button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Button onClick={() => setEditingStatus(emptyStatus)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add New Color
+            </Button>
+          </div>
         </div>
       </header>
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
@@ -129,7 +133,7 @@ export default function ColorsPage() {
             <CardContent className="p-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {statuses.map((status) => (
-                  <div key={status.id} className="group flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                  <div key={status.id} className="group flex items-center justify-between rounded-lg border p-4 hover:bg-muted/60">
                     <div className="flex items-center gap-4">
                       <span 
                         className="w-6 h-6 rounded-full"
@@ -137,7 +141,7 @@ export default function ColorsPage() {
                       />
                       <div>
                         <p className="font-semibold">{status.name}</p>
-                        <p className="text-sm text-gray-500">{status.hex}</p>
+                        <p className="text-sm text-muted-foreground">{status.hex}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

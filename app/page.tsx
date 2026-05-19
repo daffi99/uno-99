@@ -777,12 +777,12 @@ export default function UnoCalendar() {
     const maxTop = Math.max(...taskPositions.map((pos) => pos.top + pos.height), 200)
 
     return (
-      <div className="border-x border-b border-border bg-gray-800 rounded-lg overflow-hidden dark:bg-stone-800">
+      <div className="overflow-hidden rounded-xl border border-border/70 bg-white/80 shadow-inner transition-colors duration-500 dark:bg-slate-900/80">
         <div className="grid grid-cols-7 divide-x divide-border">
           {weekDays.map((day, index) => (
             <div key={index} className="p-2 text-center">
-              <div className="text-sm font-medium text-secondary-foreground">{formatDayName(day)}</div>
-              <div className="text-lg font-bold text-secondary-foreground">{formatDisplayDate(day)}</div>
+              <div className="text-sm font-medium text-muted-foreground">{formatDayName(day)}</div>
+              <div className="text-lg font-bold text-foreground">{formatDisplayDate(day)}</div>
             </div>
           ))}
         </div>
@@ -815,7 +815,7 @@ export default function UnoCalendar() {
               return (
                 <div
                   key={task.id}
-                  className={`absolute bg-gray-800 dark:bg-stone-800 rounded-lg shadow-md hover:shadow-lg transition-shadow group group/card pointer-events-auto ${isUpdating ? "opacity-75" : ""}`}
+                  className={`absolute rounded-lg bg-white/95 shadow-md ring-1 ring-slate-200/80 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:bg-slate-800/95 dark:ring-white/10 group group/card pointer-events-auto ${isUpdating ? "opacity-75" : ""}`}
                   style={{
                     left: position.left,
                     width: position.width,
@@ -844,7 +844,7 @@ export default function UnoCalendar() {
                   />
                   {/* Card content with padding */}
                   <div
-                    className="relative h-full p-2 pb-2 cursor-move rounded-sm text-foreground bg-gray-800 dark:bg-stone-800"
+                    className="relative h-full cursor-move rounded-lg bg-white/95 p-2 pb-2 text-foreground transition-colors duration-300 dark:bg-slate-800/95"
                     draggable
                     onDragStart={() => handleDragStart(task)}
                   >
@@ -964,7 +964,7 @@ export default function UnoCalendar() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-6 w-6 p-0 text-gray-600 hover:bg-gray-100 focus:bg-gray-100 active:bg-gray-100 focus:ring-0 focus:outline-none"
+                            className="h-6 w-6 p-0 text-muted-foreground hover:bg-muted focus:bg-muted active:bg-muted focus:ring-0 focus:outline-none"
                             onClick={(e) => {
                               e.stopPropagation()
                               handleEditTask(task)
@@ -1060,11 +1060,8 @@ export default function UnoCalendar() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--bg-primary)" }}>
-      <div
-        className="max-w-8xl
-      "
-      >
+    <div className="min-h-screen">
+      <div className="max-w-8xl">
         <div className="flex items-center justify-between mb-7 px-2">
           <div className="flex items-center gap-2">
             <img
@@ -1133,7 +1130,7 @@ export default function UnoCalendar() {
 
         <div className="space-y-4">
           <Card
-            className="bg-gray-800 dark:bg-stone-800 shadow-sm border-0 rounded-xl overflow-hidden max-w-7xl mx-auto"
+            className="mx-auto max-w-7xl overflow-hidden rounded-2xl border-white/10 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 shadow-xl shadow-slate-900/10 dark:from-slate-900 dark:via-slate-950 dark:to-black"
             style={{ paddingLeft: "5%", paddingRight: "5%", paddingTop: 12, marginBottom: 2 }}
           >
             <div className="text-center mb-4 px-2">
@@ -1146,12 +1143,12 @@ export default function UnoCalendar() {
           </Card>
 
           <Card
-            className="bg-background dark:bg-stone-800 shadow-sm border-0 rounded-xl overflow-hidden max-w-7xl mx-auto mt-8"
+            className="mx-auto mt-8 max-w-7xl overflow-hidden rounded-2xl border-white/60 bg-white/75 shadow-xl shadow-slate-200/50 backdrop-blur-md dark:border-white/10 dark:bg-slate-950/70 dark:shadow-slate-950/40"
             style={{ paddingLeft: "5%", paddingRight: "5%", paddingTop: 12, marginBottom: 2 }}
           >
             <div className="text-center mb-4 px-2">
-              <h2 className="text-xl font-bold text-white dark:text-white">{formatWeekRange(nextWeek)}</h2>
-              <p className="text-sm text-white dark:text-gray-300">
+              <h2 className="text-xl font-bold text-foreground">{formatWeekRange(nextWeek)}</h2>
+              <p className="text-sm text-muted-foreground">
                 {nextWeekRecurringCount} recurring task{nextWeekRecurringCount !== 1 ? "s" : ""}
               </p>
             </div>
@@ -1194,19 +1191,19 @@ export default function UnoCalendar() {
                     const completed = checked.length
                     const percent = Math.round((completed / total) * 100)
                     return (
-                      <div key={checklist.key} className="bg-gray-50 rounded-lg p-4">
+                      <div key={checklist.key} className="rounded-lg bg-gray-50 p-4 dark:bg-slate-900">
                         <div className="flex items-center justify-between mb-2">
                           <span className="font-semibold text-base">{checklist.label}</span>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold">{percent}%</span>
-                            <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <span className="text-xs font-semibold text-foreground">{percent}%</span>
+                            <div className="h-2 w-24 overflow-hidden rounded-full bg-gray-200 dark:bg-slate-700">
                               <div className="h-2 bg-blue-500" style={{ width: `${percent}%` }} />
                             </div>
                           </div>
                         </div>
                         <div className="flex flex-wrap gap-4">
                           {checklist.platforms.map((platform) => (
-                            <label key={platform} className="flex items-center gap-1 text-sm font-medium">
+                            <label key={platform} className="flex items-center gap-1 text-sm font-medium text-foreground">
                               <input
                                 type="checkbox"
                                 checked={checked.includes(platform)}
@@ -1217,7 +1214,7 @@ export default function UnoCalendar() {
                                   const newState = { ...checklistState, [checklist.key]: newChecked }
                                   setNewTask({ ...newTask, description: JSON.stringify(newState) })
                                 }}
-                                className="form-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded"
+                                className="form-checkbox h-4 w-4 rounded border-gray-300 text-blue-600 dark:border-slate-500"
                               />
                               {platform}
                             </label>

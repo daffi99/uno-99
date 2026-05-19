@@ -1,62 +1,43 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Moon, Sun } from "lucide-react"
+import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 export function ThemeToggle() {
-  const [isDark, setIsDark] = useState(false)
+  const { resolvedTheme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
-    const savedTheme = localStorage.getItem("theme") || "light"
-    const isDarkMode = savedTheme === "dark"
-    setIsDark(isDarkMode)
-    applyTheme(isDarkMode)
   }, [])
 
-  const applyTheme = (dark: boolean) => {
-    const html = document.documentElement
-    if (dark) {
-      html.classList.add("dark")
-      html.style.backgroundColor = "#0f0f0f"
-      document.body.style.backgroundColor = "#0f0f0f"
-      localStorage.setItem("theme", "dark")
-    } else {
-      html.classList.remove("dark")
-      html.style.backgroundColor = "#f7f6ed"
-      document.body.style.backgroundColor = "#f7f6ed"
-      localStorage.setItem("theme", "light")
-    }
-  }
-
-  const toggleTheme = () => {
-    const newDarkMode = !isDark
-    setIsDark(newDarkMode)
-    applyTheme(newDarkMode)
-  }
-
-  if (!mounted) return null
+  const isDark = mounted && resolvedTheme === "dark"
 
   return (
     <Button
-      onClick={toggleTheme}
-      className="relative w-10 h-10 p-0 rounded-full bg-white hover:bg-gray-100 text-black border border-gray-200 transition-all duration-300 overflow-hidden"
+      type="button"
+      variant="outline"
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      className="relative h-9 w-9 overflow-hidden rounded-full border border-border bg-background p-0 text-foreground transition-all duration-300 hover:scale-105 hover:bg-muted"
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      disabled={!mounted}
     >
-      <div className="relative w-full h-full flex items-center justify-center">
-        <Sun
-          className={`absolute h-5 w-5 transition-all duration-300 transform ${
-            isDark ? "scale-0 rotate-90 opacity-0" : "scale-100 rotate-0 opacity-100"
-          }`}
-        />
-        <Moon
-          className={`absolute h-5 w-5 transition-all duration-300 transform ${
-            isDark ? "scale-100 rotate-0 opacity-100" : "scale-0 -rotate-90 opacity-0"
-          }`}
-        />
-      </div>
+      <Sun
+        className={cn(
+          "absolute h-4 w-4 transition-all duration-300",
+          isDark ? "rotate-90 scale-0 opacity-0" : "rotate-0 scale-100 opacity-100",
+        )}
+      />
+      <Moon
+        className={cn(
+          "absolute h-4 w-4 transition-all duration-300",
+          isDark ? "rotate-0 scale-100 opacity-100" : "-rotate-90 scale-0 opacity-0",
+        )}
+      />
     </Button>
   )
 }

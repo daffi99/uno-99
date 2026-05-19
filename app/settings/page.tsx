@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, Edit, Trash2, Loader2, ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 interface Status {
   id: number;
@@ -113,15 +114,16 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl mx-auto">
+    <div className="mx-auto max-w-4xl p-4 md:p-8">
       <header className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
-            <Link href="/" className="p-2 rounded-full hover:bg-gray-100">
+            <Link href="/" className="p-2 rounded-full hover:bg-muted">
                 <ArrowLeft className="w-6 h-6" />
             </Link>
             <h1 className="text-3xl font-bold">Manage Statuses</h1>
         </div>
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <Link href="/colors">
             <Button variant="outline">Manage Colors</Button>
           </Link>
@@ -135,12 +137,12 @@ export default function SettingsPage() {
       <div className="space-y-8">
         {Object.entries(groupedStatuses).map(([category, statusesInCategory]) => (
             <div key={category}>
-                <h2 className="text-xl font-semibold mb-4 text-gray-700">{category}</h2>
+                <h2 className="mb-4 text-xl font-semibold text-foreground/80">{category}</h2>
                 <Card>
                     <CardContent className="p-0">
                     <div className="divide-y">
                         {statusesInCategory.map(status => (
-                        <div key={status.id} className="flex items-center justify-between p-4 hover:bg-gray-50">
+                        <div key={status.id} className="flex items-center justify-between p-4 hover:bg-muted/60">
                             <div className="flex items-center gap-4">
                             <span 
                                 className="w-5 h-5 rounded-full"
