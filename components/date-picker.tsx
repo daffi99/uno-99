@@ -7,18 +7,51 @@ interface DatePickerProps {
   value?: string
   onChange?: (date: string) => void
   placeholder?: string
-  position?: "left" | "right"
+  position?: "left" | "right" | "bottom" | "bottom-right" | "bottom-left"
+  variant?: "input" | "pill"
+  className?: string
+  showValueInPill?: boolean
 }
 
 const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 const dayNames = ["S", "M", "T", "W", "T", "F", "S"]
 
-export function DatePicker({ value, onChange, placeholder = "Pick a date", position = "left" }: DatePickerProps) {
+export function DatePicker({
+  value,
+  onChange,
+  placeholder = "Pick a date",
+  position = "left",
+  variant = "input",
+  className = "",
+  showValueInPill = false,
+}: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth())
-  const [currentYear, setCurrentYear] = useState(new Date().getFullYear())
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    if (value) {
+      const d = new Date(value + "T00:00:00")
+      if (!isNaN(d.getTime())) return d.getMonth()
+    }
+    return new Date().getMonth()
+  })
+  const [currentYear, setCurrentYear] = useState(() => {
+    if (value) {
+      const d = new Date(value + "T00:00:00")
+      if (!isNaN(d.getTime())) return d.getFullYear()
+    }
+    return new Date().getFullYear()
+  })
   const containerRef = useRef<HTMLDivElement>(null)
   const calendarRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (value) {
+      const d = new Date(value + "T00:00:00")
+      if (!isNaN(d.getTime())) {
+        setCurrentMonth(d.getMonth())
+        setCurrentYear(d.getFullYear())
+      }
+    }
+  }, [value, isOpen])
 
   const selectedDate = value ? new Date(value + "T00:00:00") : null
   const displayDate = value ? new Date(value + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }) : placeholder
@@ -75,22 +108,48 @@ export function DatePicker({ value, onChange, placeholder = "Pick a date", posit
     return selectedDate?.getDate() === day && selectedDate?.getMonth() === currentMonth && selectedDate?.getFullYear() === currentYear
   }
 
+  const getPositionClasses = () => {
+    switch (position) {
+      case "right":
+        return "top-0 left-full ml-2"
+      case "bottom":
+      case "bottom-left":
+        return "top-full mt-2 left-0"
+      case "bottom-right":
+        return "top-full mt-2 right-0"
+      case "left":
+      default:
+        return "top-0 right-full mr-2"
+    }
+  }
+
   return (
-    <div ref={containerRef} className="relative w-full">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full h-10 px-3 flex items-center gap-2 border border-border bg-background rounded-lg text-sm hover:border-border/80 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20"
-      >
-        <CalendarIcon className="h-4 w-4 text-foreground/60" />
-        <span className="text-foreground">{displayDate}</span>
-      </button>
+    <div ref={containerRef} className={variant === "pill" ? "relative inline-block" : "relative w-full"}>
+      {variant === "pill" ? (
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className={`relative flex items-center gap-1.5 px-3 py-1 rounded-full border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-2xs cursor-pointer active:scale-95 ${className}`}
+          title="Pick a date to jump to that week"
+        >
+          <span>{showValueInPill && value ? displayDate : placeholder}</span>
+          <CalendarIcon className="w-3.5 h-3.5 text-gray-500" />
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className={`w-full h-10 px-3 flex items-center gap-2 border border-border bg-background rounded-lg text-sm hover:border-border/80 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20 ${className}`}
+        >
+          <CalendarIcon className="h-4 w-4 text-foreground/60" />
+          <span className="text-foreground">{displayDate}</span>
+        </button>
+      )}
 
       {isOpen && (
         <div 
           ref={calendarRef}
-          className={`absolute top-0 bg-background border border-border rounded-lg shadow-lg p-4 w-80 z-50 ${
-            position === "right" ? "left-full ml-2" : "right-full mr-2"
-          }`}
+          className={`absolute bg-white dark:bg-zinc-900 border border-border rounded-xl shadow-xl p-4 w-80 z-50 animate-in fade-in-50 zoom-in-95 duration-100 ${getPositionClasses()}`}
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">

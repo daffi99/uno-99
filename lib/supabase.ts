@@ -18,6 +18,8 @@ export type Database = {
           status: string
           priority: "low" | "medium" | "high"
           recurring: "no" | "daily" | "weekly" | "monthly"
+          start_time?: string | null
+          end_time?: string | null
           created_at: string
           updated_at: string
         }
@@ -30,6 +32,8 @@ export type Database = {
           status?: string
           priority?: "low" | "medium" | "high"
           recurring?: "no" | "daily" | "weekly" | "monthly"
+          start_time?: string | null
+          end_time?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -42,6 +46,8 @@ export type Database = {
           status?: string
           priority?: "low" | "medium" | "high"
           recurring?: "no" | "daily" | "weekly" | "monthly"
+          start_time?: string | null
+          end_time?: string | null
           created_at?: string
           updated_at?: string
         }

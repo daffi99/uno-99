@@ -57,27 +57,55 @@ export async function POST(request: NextRequest) {
       type,
     })
 
-    const { data: task, error } = await supabase
+    const insertPayload: Record<string, any> = {
+      title,
+      description,
+      start_date,
+      end_date,
+      status: status || "Not started",
+      priority: priority || "medium",
+      recurring: recurringValue,
+      type,
+    }
+
+    if (body.start_time !== undefined) {
+      insertPayload.start_time = body.start_time
+    }
+    if (body.end_time !== undefined) {
+      insertPayload.end_time = body.end_time
+    }
+
+    let { data: task, error } = await supabase
       .from("tasks")
-      .insert({
-        title,
-        description,
-        start_date,
-        end_date,
-        status: status || "Not started",
-        priority: priority || "medium",
-        recurring: recurringValue,
-        type,
-      })
+      .insert(insertPayload)
       .select()
       .single()
+
+    // Graceful fallback if start_time or end_time don't exist yet
+    if (error && error.message && (error.message.includes("end_time") || error.message.includes("start_time"))) {
+      if (error.message.includes("end_time")) delete insertPayload.end_time
+      if (error.message.includes("start_time")) delete insertPayload.start_time
+      const retry = await supabase
+        .from("tasks")
+        .insert(insertPayload)
+        .select()
+        .single()
+      task = retry.data
+      error = retry.error
+    }
 
     if (error) {
       console.error("Supabase error creating task:", error)
       return NextResponse.json({ error: `Failed to create task: ${error.message}` }, { status: 500 })
     }
 
-    return NextResponse.json({ task }, { status: 201 })
+    return NextResponse.json({
+      task: {
+        ...task,
+        ...(body.start_time !== undefined ? { start_time: body.start_time } : {}),
+        ...(body.end_time !== undefined ? { end_time: body.end_time } : {}),
+      },
+    }, { status: 201 })
   } catch (error) {
     console.error("Error in POST /api/tasks:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
