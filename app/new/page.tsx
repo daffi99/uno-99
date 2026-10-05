@@ -820,7 +820,16 @@ export default function NewCalendarPage() {
       const data = await res.json()
 
       if (data.tasks) {
-        setTasks(data.tasks)
+        const hydrated = data.tasks.map((task: Task) => {
+          const localStart = typeof window !== "undefined" ? localStorage.getItem(`uno_task_starttime_${task.id}`) : null
+          const localEnd = typeof window !== "undefined" ? localStorage.getItem(`uno_task_endtime_${task.id}`) : null
+          return {
+            ...task,
+            start_time: task.start_time || localStart || undefined,
+            end_time: task.end_time || localEnd || undefined,
+          }
+        })
+        setTasks(hydrated)
       }
     } catch (err) {
       console.error("Error loading tasks:", err)
@@ -1008,10 +1017,14 @@ export default function NewCalendarPage() {
 
       const remainingActive: Task[] = []
 
-      // Place active tasks: if start_time is set in DB or title match, place directly!
+      // Place active tasks: if start_time is set in DB/storage or title match, place directly!
       activeTasks.forEach((t) => {
         let placed = false
-        if (t.start_time || (t.start_date === "2026-09-22" && t.title.toLowerCase().includes("chelsea content"))) {
+        const hasStartTime = Boolean(
+          t.start_time ||
+          (typeof window !== "undefined" && localStorage.getItem(`uno_task_starttime_${t.id}`))
+        )
+        if (hasStartTime || (t.start_date === "2026-09-22" && t.title.toLowerCase().includes("chelsea content"))) {
           const effectiveStart = getTaskStartTime(t)
           const effectiveEnd = getTaskEndTime(t)
           const occupied = getTaskOccupiedSlots(effectiveStart, effectiveEnd)
@@ -1065,10 +1078,14 @@ export default function NewCalendarPage() {
         }
       })
 
-      // For skipped tasks: if start_time is set in DB, place directly; otherwise distribute to bottom slots
+      // For skipped tasks: if start_time is set in DB or storage, place directly; otherwise distribute to bottom slots
       const remainingSkipped: Task[] = []
       skippedTasks.forEach((t) => {
-        if (t.start_time) {
+        const hasStartTime = Boolean(
+          t.start_time ||
+          (typeof window !== "undefined" && localStorage.getItem(`uno_task_starttime_${t.id}`))
+        )
+        if (hasStartTime) {
           const effectiveStart = getTaskStartTime(t)
           const effectiveEnd = getTaskEndTime(t)
           const occupied = getTaskOccupiedSlots(effectiveStart, effectiveEnd)
@@ -3294,7 +3311,10 @@ export default function NewCalendarPage() {
                               {new Date(task.start_date).toLocaleDateString("en-US", { weekday: "short" })}
                             </span>
                             <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 border border-blue-100 px-1.5 py-0.2 rounded">
-                              {task.start_time || "10:00"}
+                              {getEffectiveTaskStartTime(task)}
+                              {getEffectiveTaskEndTime(task) && getEffectiveTaskEndTime(task) !== getEffectiveTaskStartTime(task)
+                                ? ` - ${getEffectiveTaskEndTime(task)}`
+                                : ""}
                             </span>
                           </div>
                         </div>

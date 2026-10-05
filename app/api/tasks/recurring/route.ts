@@ -43,15 +43,27 @@ export async function POST(request: NextRequest) {
 
     let { data: tasks, error } = await supabase.from("tasks").insert(validatedTasks).select()
 
-    // Graceful fallback if start_time or end_time don't exist yet on DB
-    if (error && error.message && (error.message.includes("end_time") || error.message.includes("start_time"))) {
-      const fallbackTasks = validatedTasks.map((t) => {
+    // Graceful fallback if end_time doesn't exist in DB: retry keeping start_time!
+    if (error && error.message && error.message.includes("end_time")) {
+      const fallbackWithoutEndTime = validatedTasks.map((t) => {
+        const copy = { ...t }
+        delete copy.end_time
+        return copy
+      })
+      const retry = await supabase.from("tasks").insert(fallbackWithoutEndTime).select()
+      tasks = retry.data
+      error = retry.error
+    }
+
+    // Secondary fallback if start_time also doesn't exist in DB
+    if (error && error.message && error.message.includes("start_time")) {
+      const fallbackWithoutTime = validatedTasks.map((t) => {
         const copy = { ...t }
         delete copy.start_time
         delete copy.end_time
         return copy
       })
-      const retry = await supabase.from("tasks").insert(fallbackTasks).select()
+      const retry = await supabase.from("tasks").insert(fallbackWithoutTime).select()
       tasks = retry.data
       error = retry.error
     }
