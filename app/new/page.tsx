@@ -862,6 +862,35 @@ export default function NewCalendarPage() {
     }
   }, [weekTasks])
 
+  // Helper to resolve effective start time (DB -> localStorage -> fallback)
+  const getEffectiveTaskStartTime = (t: Task): string => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(`uno_task_starttime_${t.id}`)
+      if (saved) return saved === "12:00" ? "13:00" : saved
+    }
+    if (t.start_time) return t.start_time === "12:00" ? "13:00" : t.start_time
+    if (t.start_date === "2026-09-22" && t.title.toLowerCase().includes("chelsea content")) {
+      return "13:00"
+    }
+    return "10:00"
+  }
+
+  // Helper to resolve effective end time (active resizing -> localStorage -> DB -> fallback)
+  const getEffectiveTaskEndTime = (t: Task): string => {
+    if (resizingTask && resizingTask.taskId === t.id) {
+      return resizingTask.currentEndSlot
+    }
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(`uno_task_endtime_${t.id}`)
+      if (saved) return saved === "12:00" ? "13:00" : saved
+    }
+    if (t.end_time) return t.end_time === "12:00" ? "13:00" : t.end_time
+    if (t.start_date === "2026-09-22" && t.title.toLowerCase().includes("chelsea content")) {
+      return "14:00"
+    }
+    return getEffectiveTaskStartTime(t)
+  }
+
   // Separate multi-day tasks (2-3+ days) vs single-day tasks
   const { multiDayTracks, singleDaySlotMap, masterSpanMap, slaveSlotSet } = useMemo(() => {
     const multiDayList: Task[] = []
@@ -955,32 +984,8 @@ export default function NewCalendarPage() {
     const masterSpans: Record<string, number> = {}
     const slaves = new Set<string>()
 
-    const getTaskStartTime = (t: Task): string => {
-      if (typeof window !== "undefined") {
-        const saved = localStorage.getItem(`uno_task_starttime_${t.id}`)
-        if (saved) return saved === "12:00" ? "13:00" : saved
-      }
-      if (t.start_time) return t.start_time === "12:00" ? "13:00" : t.start_time
-      if (t.start_date === "2026-09-22" && t.title.toLowerCase().includes("chelsea content")) {
-        return "13:00"
-      }
-      return "10:00"
-    }
-
-    const getTaskEndTime = (t: Task): string => {
-      if (resizingTask && resizingTask.taskId === t.id) {
-        return resizingTask.currentEndSlot
-      }
-      if (typeof window !== "undefined") {
-        const saved = localStorage.getItem(`uno_task_endtime_${t.id}`)
-        if (saved) return saved === "12:00" ? "13:00" : saved
-      }
-      if (t.end_time) return t.end_time === "12:00" ? "13:00" : t.end_time
-      if (t.start_date === "2026-09-22" && t.title.toLowerCase().includes("chelsea content")) {
-        return "14:00"
-      }
-      return getTaskStartTime(t)
-    }
+    const getTaskStartTime = getEffectiveTaskStartTime
+    const getTaskEndTime = getEffectiveTaskEndTime
 
     singleDayList.forEach((t) => {
       if (!singleByDate[t.start_date]) singleByDate[t.start_date] = []
@@ -1434,8 +1439,13 @@ export default function NewCalendarPage() {
       const data = await response.json()
 
       if (response.ok) {
-        if (typeof window !== "undefined" && newTask.end_time && data.task?.id) {
-          localStorage.setItem(`uno_task_endtime_${data.task.id}`, newTask.end_time)
+        if (typeof window !== "undefined" && data.task?.id) {
+          if (newTask.end_time) {
+            localStorage.setItem(`uno_task_endtime_${data.task.id}`, newTask.end_time)
+          }
+          if (newTask.start_time) {
+            localStorage.setItem(`uno_task_starttime_${data.task.id}`, newTask.start_time)
+          }
         }
         setTasks((prev) => [...prev, { ...data.task, end_time: newTask.end_time, start_time: newTask.start_time }])
         resetForm()
@@ -1591,10 +1601,16 @@ export default function NewCalendarPage() {
           const duration = getDaysDifference(task.start_date, task.end_date)
           const newEndDate = addDays(newStartDate, duration)
 
+          // Preserve exact start_time and end_time (time position and slot span)
+          const effectiveStart = getEffectiveTaskStartTime(task)
+          const effectiveEnd = getEffectiveTaskEndTime(task)
+
           tasksToAdd.push({
             ...task,
             start_date: newStartDate,
             end_date: newEndDate,
+            start_time: effectiveStart,
+            end_time: effectiveEnd,
             status: task.status === "Meeting" || task.status === "Holiday" ? task.status : "Not started",
             type: task.type,
             description: task.type === "checklist" ? "" : task.description,
@@ -1641,9 +1657,28 @@ export default function NewCalendarPage() {
         throw new Error(data.error)
       }
 
+      // Persist start_time and end_time to localStorage for fast access
+      if (typeof window !== "undefined" && Array.isArray(data.tasks)) {
+        data.tasks.forEach((createdTask: Task) => {
+          if (createdTask.id) {
+            if (createdTask.start_time) {
+              localStorage.setItem(`uno_task_starttime_${createdTask.id}`, createdTask.start_time)
+            }
+            if (createdTask.end_time) {
+              localStorage.setItem(`uno_task_endtime_${createdTask.id}`, createdTask.end_time)
+            }
+          }
+        })
+      }
+
       setTasks([...tasks, ...data.tasks])
       setIsRecurringModalOpen(false)
       setRecurringTasksToAdd([])
+      showNotification(
+        `Successfully added ${data.tasks.length} weekly recurring task(s) with preserved time positions!`,
+        "Weekly Tasks Added",
+        "success"
+      )
     } catch (error) {
       console.error("Error creating recurring tasks:", error)
       showNotification(`Failed to create recurring tasks: ${error instanceof Error ? error.message : "Unknown error"}`, "Error", "error")
@@ -3032,14 +3067,20 @@ export default function NewCalendarPage() {
                 {recurringTasksToAdd.map((task, index) => (
                   <div
                     key={`${task.id}-${index}`}
-                    className="flex flex-col items-start gap-1 px-2 py-2 bg-white border border-gray-300 rounded text-xs font-medium hover:bg-blue-50 transition"
+                    className="flex flex-col items-start gap-1 px-2.5 py-2 bg-white border border-gray-200 rounded-lg text-xs font-medium hover:bg-blue-50/50 transition shadow-2xs"
                   >
-                    <div className="flex items-center gap-1 w-full">
-                      <Repeat className="w-3 h-3 text-blue-500 flex-shrink-0" />
-                      {recurringType === "daily" && <CalendarIcon className="w-3 h-3 text-green-500 flex-shrink-0" />}
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-1">
+                        <Repeat className="w-3 h-3 text-blue-500 flex-shrink-0" />
+                        {recurringType === "daily" && <CalendarIcon className="w-3 h-3 text-green-500 flex-shrink-0" />}
+                      </div>
+                      <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded">
+                        {task.start_time || "10:00"}
+                        {task.end_time && task.end_time !== task.start_time ? ` - ${task.end_time}` : ""}
+                      </span>
                     </div>
-                    <div className="truncate text-gray-800 font-semibold text-xs w-full">{task.title}</div>
-                    <div className="text-xs text-gray-500">
+                    <div className="truncate text-gray-800 font-semibold text-xs w-full" title={task.title}>{task.title}</div>
+                    <div className="text-[11px] text-gray-500">
                       {new Date(task.start_date).toLocaleDateString("en-US", {
                         weekday: "short",
                         month: "short",

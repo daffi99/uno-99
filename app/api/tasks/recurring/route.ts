@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
         throw new Error(`Invalid recurring value: ${recurringValue}`)
       }
 
-      return {
+      const item: Record<string, any> = {
         title: task.title,
         description: task.description || null,
         start_date: task.start_date,
@@ -30,17 +30,46 @@ export async function POST(request: NextRequest) {
         recurring: recurringValue,
         type: task.type,
       }
+
+      if (task.start_time !== undefined && task.start_time !== null) {
+        item.start_time = task.start_time
+      }
+      if (task.end_time !== undefined && task.end_time !== null) {
+        item.end_time = task.end_time
+      }
+
+      return item
     })
 
-    const { data: tasks, error } = await supabase.from("tasks").insert(validatedTasks).select()
+    let { data: tasks, error } = await supabase.from("tasks").insert(validatedTasks).select()
+
+    // Graceful fallback if start_time or end_time don't exist yet on DB
+    if (error && error.message && (error.message.includes("end_time") || error.message.includes("start_time"))) {
+      const fallbackTasks = validatedTasks.map((t) => {
+        const copy = { ...t }
+        delete copy.start_time
+        delete copy.end_time
+        return copy
+      })
+      const retry = await supabase.from("tasks").insert(fallbackTasks).select()
+      tasks = retry.data
+      error = retry.error
+    }
 
     if (error) {
       console.error("Supabase error creating recurring tasks:", error)
       return NextResponse.json({ error: `Failed to create recurring tasks: ${error.message}` }, { status: 500 })
     }
 
-    console.log("Successfully created recurring tasks:", tasks)
-    return NextResponse.json({ tasks }, { status: 201 })
+    // Merge start_time and end_time back into response so frontend has accurate time values
+    const finalTasks = (tasks || []).map((t, idx) => ({
+      ...t,
+      ...(validatedTasks[idx]?.start_time ? { start_time: validatedTasks[idx].start_time } : {}),
+      ...(validatedTasks[idx]?.end_time ? { end_time: validatedTasks[idx].end_time } : {}),
+    }))
+
+    console.log("Successfully created recurring tasks:", finalTasks)
+    return NextResponse.json({ tasks: finalTasks }, { status: 201 })
   } catch (error) {
     console.error("Error in POST /api/tasks/recurring:", error)
     return NextResponse.json(
