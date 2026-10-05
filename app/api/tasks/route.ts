@@ -111,3 +111,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { ids } = body
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return NextResponse.json({ error: "No task IDs provided" }, { status: 400 })
+    }
+
+    const { error } = await supabase.from("tasks").delete().in("id", ids)
+
+    if (error) {
+      console.error("Supabase error deleting tasks:", error)
+      return NextResponse.json({ error: `Failed to delete tasks: ${error.message}` }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true, count: ids.length })
+  } catch (error) {
+    console.error("Error in DELETE /api/tasks:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}
+

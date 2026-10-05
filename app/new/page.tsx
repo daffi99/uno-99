@@ -29,6 +29,8 @@ import {
   Lock,
   Mail,
   Camera,
+  AlertTriangle,
+  CalendarX,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -409,6 +411,14 @@ export default function NewCalendarPage() {
     })
   }
 
+
+  // Delete Weekly Tasks State (2-step verification modal)
+  const [isDeleteWeeklyModalOpen, setIsDeleteWeeklyModalOpen] = useState(false)
+  const [deleteWeeklyStep, setDeleteWeeklyStep] = useState<1 | 2>(1)
+  const [verificationWord, setVerificationWord] = useState("")
+  const [inputVerificationWord, setInputVerificationWord] = useState("")
+  const [deleteWeeklyLoading, setDeleteWeeklyLoading] = useState(false)
+  const [weeklyTasksToDelete, setWeeklyTasksToDelete] = useState<Task[]>([])
 
   // Profile Dropdown state (Image 2)
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false)
@@ -1687,6 +1697,101 @@ export default function NewCalendarPage() {
     }
   }
 
+  // 2-Step Verification Words & Handlers to delete weekly tasks in current week
+  const VERIFICATION_WORDS = [
+    "breeze", "harbor", "canvas", "orbit", "puzzle", "ember", "falcon",
+    "meadow", "zenith", "shadow", "timber", "canyon", "pebble", "willow",
+    "beacon", "ripple", "cobalt", "anchor", "spark", "forest", "valley"
+  ]
+
+  const getRandomVerificationWord = () => {
+    return VERIFICATION_WORDS[Math.floor(Math.random() * VERIFICATION_WORDS.length)]
+  }
+
+  const currentWeekWeeklyCount = useMemo(() => {
+    const currentWeekStart = formatDate(weekDays[0])
+    const currentWeekEnd = formatDate(weekDays[6])
+    return tasks.filter(
+      (task) =>
+        task.start_date &&
+        task.start_date >= currentWeekStart &&
+        task.start_date <= currentWeekEnd &&
+        task.recurring === "weekly"
+    ).length
+  }, [tasks, weekDays])
+
+  const handleOpenDeleteWeeklyModal = () => {
+    const currentWeekStart = formatDate(weekDays[0])
+    const currentWeekEnd = formatDate(weekDays[6])
+    const weeklyInCurrentWeek = tasks.filter(
+      (task) =>
+        task.start_date &&
+        task.start_date >= currentWeekStart &&
+        task.start_date <= currentWeekEnd &&
+        task.recurring === "weekly"
+    )
+    setWeeklyTasksToDelete(weeklyInCurrentWeek)
+    setDeleteWeeklyStep(1)
+    setVerificationWord(getRandomVerificationWord())
+    setInputVerificationWord("")
+    setIsDeleteWeeklyModalOpen(true)
+  }
+
+  const handleProceedToStep2 = () => {
+    setVerificationWord(getRandomVerificationWord())
+    setInputVerificationWord("")
+    setDeleteWeeklyStep(2)
+  }
+
+  const handleConfirmDeleteWeeklyTasks = async () => {
+    if (weeklyTasksToDelete.length === 0) return
+    if (inputVerificationWord.trim().toLowerCase() !== verificationWord) return
+
+    try {
+      setDeleteWeeklyLoading(true)
+      const idsToDelete = weeklyTasksToDelete.map((t) => t.id)
+
+      const response = await fetch("/api/tasks", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: idsToDelete }),
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`HTTP ${response.status}: ${errorText}`)
+      }
+
+      // Clean up localStorage for deleted tasks
+      if (typeof window !== "undefined") {
+        idsToDelete.forEach((id) => {
+          localStorage.removeItem(`uno_task_starttime_${id}`)
+          localStorage.removeItem(`uno_task_endtime_${id}`)
+        })
+      }
+
+      // Update state
+      const idSet = new Set(idsToDelete)
+      setTasks((prev) => prev.filter((t) => !idSet.has(t.id)))
+
+      setIsDeleteWeeklyModalOpen(false)
+      showNotification(
+        `Successfully deleted ${idsToDelete.length} weekly recurring task(s) for this week!`,
+        "Weekly Tasks Deleted",
+        "success"
+      )
+    } catch (error) {
+      console.error("Error deleting weekly tasks:", error)
+      showNotification(
+        `Failed to delete weekly tasks: ${error instanceof Error ? error.message : "Unknown error"}`,
+        "Error",
+        "error"
+      )
+    } finally {
+      setDeleteWeeklyLoading(false)
+    }
+  }
+
   // Format month and range labels
   const monthYearLabel = weekDays[0].toLocaleDateString("en-US", {
     month: "long",
@@ -1863,6 +1968,33 @@ export default function NewCalendarPage() {
                       <Palette className="w-3.5 h-3.5 text-gray-400" />
                       <span>Manage Color</span>
                     </Link>
+                  </div>
+
+                  <div className="h-px bg-gray-100 my-1" />
+
+                  {/* Weekly schedule actions */}
+                  <div className="py-1">
+                    <p className="px-2.5 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                      Weekly Schedule
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsProfileDropdownOpen(false)
+                        handleOpenDeleteWeeklyModal()
+                      }}
+                      className="w-full flex items-center justify-between px-2.5 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer text-left group"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <CalendarX className="w-3.5 h-3.5 text-rose-500 group-hover:scale-110 transition-transform" />
+                        <span>Delete Weekly Tasks</span>
+                      </div>
+                      {currentWeekWeeklyCount > 0 && (
+                        <span className="text-[10px] font-semibold text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-full">
+                          {currentWeekWeeklyCount}
+                        </span>
+                      )}
+                    </button>
                   </div>
 
                   <div className="h-px bg-gray-100 my-1" />
@@ -3107,6 +3239,191 @@ export default function NewCalendarPage() {
                 </Button>
               </div>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Weekly Tasks Modal (2-Step Verification) */}
+        <Dialog open={isDeleteWeeklyModalOpen} onOpenChange={setIsDeleteWeeklyModalOpen}>
+          <DialogContent className="sm:max-w-md bg-white border border-gray-100 rounded-2xl shadow-2xl p-6">
+            {deleteWeeklyStep === 1 ? (
+              // Step 1: Usual confirmation with list of weekly tasks in current week
+              <div className="space-y-4">
+                <div className="flex items-start gap-3.5">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                    weeklyTasksToDelete.length > 0 ? "bg-rose-50 text-rose-600 border border-rose-100" : "bg-blue-50 text-blue-600 border border-blue-100"
+                  }`}>
+                    {weeklyTasksToDelete.length > 0 ? (
+                      <CalendarX className="w-5 h-5 text-rose-600" />
+                    ) : (
+                      <Info className="w-5 h-5 text-blue-600" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <DialogTitle className="text-base font-bold text-gray-900 tracking-tight">
+                      Delete Weekly Tasks
+                    </DialogTitle>
+                    <DialogDescription className="text-xs text-gray-500 mt-1">
+                      {weeklyTasksToDelete.length > 0 ? (
+                        <>
+                          Found <span className="font-semibold text-gray-800">{weeklyTasksToDelete.length} weekly recurring task(s)</span> in this week ({weekRangeLabel}).
+                        </>
+                      ) : (
+                        <>No weekly recurring tasks found in this week ({weekRangeLabel}).</>
+                      )}
+                    </DialogDescription>
+                  </div>
+                </div>
+
+                {weeklyTasksToDelete.length > 0 ? (
+                  <>
+                    <div className="p-3 bg-rose-50/70 border border-rose-100 rounded-xl text-xs text-rose-800 leading-relaxed">
+                      Are you sure you want to delete all weekly recurring tasks from this week? This action cannot be undone.
+                    </div>
+
+                    <div className="max-h-48 overflow-y-auto space-y-1.5 p-2 bg-gray-50 border border-gray-200 rounded-xl">
+                      {weeklyTasksToDelete.map((task) => (
+                        <div
+                          key={task.id}
+                          className="flex items-center justify-between px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs"
+                        >
+                          <div className="truncate font-medium text-gray-800 pr-2">
+                            {task.title}
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="text-[10px] text-gray-500">
+                              {new Date(task.start_date).toLocaleDateString("en-US", { weekday: "short" })}
+                            </span>
+                            <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 border border-blue-100 px-1.5 py-0.2 rounded">
+                              {task.start_time || "10:00"}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsDeleteWeeklyModalOpen(false)}
+                        className="rounded-xl text-xs"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleProceedToStep2}
+                        className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold shadow-xs"
+                      >
+                        Continue
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex justify-end pt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsDeleteWeeklyModalOpen(false)}
+                      className="rounded-xl text-xs"
+                    >
+                      Close
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              // Step 2: Final Verification by retyping generated random lowercase word
+              <div className="space-y-4">
+                <div className="flex items-start gap-3.5">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-rose-50 text-rose-600 border border-rose-100">
+                    <AlertTriangle className="w-5 h-5 text-rose-600" />
+                  </div>
+                  <div className="flex-1">
+                    <DialogTitle className="text-base font-bold text-gray-900 tracking-tight">
+                      Security Verification
+                    </DialogTitle>
+                    <DialogDescription className="text-xs text-gray-500 mt-1">
+                      To confirm deletion, please type the random lowercase word below.
+                    </DialogDescription>
+                  </div>
+                </div>
+
+                <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-center justify-between">
+                  <span className="text-xs font-medium text-rose-700">Verification word:</span>
+                  <div className="flex items-center gap-1.5">
+                    <code className="text-sm font-mono font-bold text-rose-800 bg-white border border-rose-200 px-2.5 py-1 rounded-lg tracking-wider select-all">
+                      {verificationWord}
+                    </code>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setVerificationWord(getRandomVerificationWord())
+                        setInputVerificationWord("")
+                      }}
+                      className="text-[10px] text-rose-600 hover:text-rose-800 underline ml-1 cursor-pointer font-medium"
+                      title="Generate new word"
+                    >
+                      Regenerate
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-700">
+                    Type <span className="font-mono font-semibold text-rose-600">"{verificationWord}"</span> to confirm:
+                  </label>
+                  <Input
+                    type="text"
+                    value={inputVerificationWord}
+                    onChange={(e) => setInputVerificationWord(e.target.value.toLowerCase().trim())}
+                    placeholder={`Type "${verificationWord}"`}
+                    className="font-mono text-sm border-gray-300 focus-visible:ring-rose-500 rounded-xl"
+                    autoFocus
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    autoComplete="off"
+                  />
+                  {inputVerificationWord.length > 0 && inputVerificationWord !== verificationWord && (
+                    <p className="text-[11px] text-rose-500 font-medium">
+                      Word does not match. Please type exactly: <code className="font-mono">{verificationWord}</code>
+                    </p>
+                  )}
+                  {inputVerificationWord === verificationWord && (
+                    <p className="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
+                      <Check className="w-3.5 h-3.5" /> Word verified! You can now delete.
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex justify-between items-center gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setDeleteWeeklyStep(1)}
+                    disabled={deleteWeeklyLoading}
+                    className="rounded-xl text-xs"
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleConfirmDeleteWeeklyTasks}
+                    disabled={inputVerificationWord !== verificationWord || deleteWeeklyLoading}
+                    className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
+                  >
+                    {deleteWeeklyLoading ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
+                        Deleting...
+                      </>
+                    ) : (
+                      `Delete ${weeklyTasksToDelete.length} Tasks`
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
 
