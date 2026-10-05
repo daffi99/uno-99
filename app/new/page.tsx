@@ -881,29 +881,29 @@ export default function NewCalendarPage() {
     }
   }, [weekTasks])
 
-  // Helper to resolve effective start time (DB -> localStorage -> fallback)
+  // Helper to resolve effective start time (Task prop -> localStorage -> fallback)
   const getEffectiveTaskStartTime = (t: Task): string => {
+    if (t.start_time) return t.start_time === "12:00" ? "13:00" : t.start_time
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem(`uno_task_starttime_${t.id}`)
       if (saved) return saved === "12:00" ? "13:00" : saved
     }
-    if (t.start_time) return t.start_time === "12:00" ? "13:00" : t.start_time
     if (t.start_date === "2026-09-22" && t.title.toLowerCase().includes("chelsea content")) {
       return "13:00"
     }
     return "10:00"
   }
 
-  // Helper to resolve effective end time (active resizing -> localStorage -> DB -> fallback)
+  // Helper to resolve effective end time (active resizing -> Task prop -> localStorage -> fallback)
   const getEffectiveTaskEndTime = (t: Task): string => {
     if (resizingTask && resizingTask.taskId === t.id) {
       return resizingTask.currentEndSlot
     }
+    if (t.end_time) return t.end_time === "12:00" ? "13:00" : t.end_time
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem(`uno_task_endtime_${t.id}`)
       if (saved) return saved === "12:00" ? "13:00" : saved
     }
-    if (t.end_time) return t.end_time === "12:00" ? "13:00" : t.end_time
     if (t.start_date === "2026-09-22" && t.title.toLowerCase().includes("chelsea content")) {
       return "14:00"
     }
@@ -1163,6 +1163,29 @@ export default function NewCalendarPage() {
       newEndDate = formatDate(endD)
     }
 
+    // Determine new end time based on original duration
+    const origStart = getEffectiveTaskStartTime(task)
+    const origEnd = getEffectiveTaskEndTime(task)
+    const origSlots = getTaskOccupiedSlots(origStart, origEnd)
+    const slotSpan = Math.max(1, origSlots.length)
+
+    let newEndTime = targetTimeSlot
+    if (slotSpan > 1) {
+      const isMorning = MORNING_SLOTS.includes(targetTimeSlot)
+      const allowedSlots = isMorning ? MORNING_SLOTS : AFTERNOON_SLOTS
+      const startIndex = allowedSlots.indexOf(targetTimeSlot)
+      if (startIndex !== -1) {
+        const endIndex = Math.min(allowedSlots.length - 1, startIndex + slotSpan - 1)
+        newEndTime = allowedSlots[endIndex]
+      }
+    }
+
+    // Update localStorage immediately so effective time helpers reflect new position
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`uno_task_starttime_${task.id}`, targetTimeSlot)
+      localStorage.setItem(`uno_task_endtime_${task.id}`, newEndTime)
+    }
+
     // Optimistic UI update
     setTasks((prev) =>
       prev.map((t) =>
@@ -1172,6 +1195,7 @@ export default function NewCalendarPage() {
               start_date: newStartDate,
               end_date: newEndDate,
               start_time: targetTimeSlot,
+              end_time: newEndTime,
             }
           : t
       )
@@ -1191,6 +1215,7 @@ export default function NewCalendarPage() {
           priority: task.priority,
           recurring: task.recurring,
           start_time: targetTimeSlot,
+          end_time: newEndTime,
         }),
       })
       if (!response.ok) {
@@ -1421,14 +1446,8 @@ export default function NewCalendarPage() {
   }
 
   const handleEditTask = (task: Task) => {
-    const startTime = task.start_time || "10:00"
-    const normStart = startTime === "12:00" ? "13:00" : startTime
-    const initialEndTime =
-      (typeof window !== "undefined" && localStorage.getItem(`uno_task_endtime_${task.id}`)) ||
-      task.end_time ||
-      (task.start_date === "2026-09-22" && task.title.toLowerCase().includes("chelsea content")
-        ? "14:00"
-        : normStart)
+    const normStart = getEffectiveTaskStartTime(task)
+    const initialEndTime = getEffectiveTaskEndTime(task)
 
     setNewTask({
       title: task.title,
@@ -2237,7 +2256,10 @@ export default function NewCalendarPage() {
                           e.stopPropagation()
                           handleEditTask(task)
                         }}
-                        style={theme.cardStyle}
+                        style={{
+                          ...theme.cardStyle,
+                          pointerEvents: draggedTask && draggedTask.id !== task.id ? "none" : "auto",
+                        }}
                         className={`rounded-2xl px-3 py-2 border shadow-2xs hover:shadow-md transition-all duration-150 cursor-grab active:cursor-grabbing flex flex-col justify-between group/card overflow-hidden min-w-0 w-full relative ${
                           draggedTask?.id === task.id ? "opacity-40 scale-95" : ""
                         } ${
@@ -2461,6 +2483,7 @@ export default function NewCalendarPage() {
                                         gridColumn: `${item.startCol + 2} / span ${item.span}`,
                                         gridRow: "1 / span 1",
                                         ...theme.cardStyle,
+                                        pointerEvents: draggedTask && draggedTask.id !== item.task.id ? "none" : "auto",
                                       }}
                                       className={`rounded-2xl min-h-[56px] h-full px-3.5 py-1.5 border shadow-2xs hover:shadow-md transition-all duration-150 cursor-grab active:cursor-grabbing flex items-center justify-between gap-2 overflow-hidden group/card ${
                                         draggedTask?.id === item.task.id ? "opacity-40 scale-95" : ""
